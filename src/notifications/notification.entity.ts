@@ -12,7 +12,8 @@ import { User } from '../users/user.entity';
 export enum NotificationChannel {
   IN_APP = 'IN_APP',
   EMAIL = 'EMAIL',
-  SMS = 'SMS'
+  SMS = 'SMS',
+  PUSH = 'PUSH'
 }
 
 export enum NotificationStatus {
@@ -21,6 +22,17 @@ export enum NotificationStatus {
   FAILED = 'FAILED',
   READ = 'READ'
 }
+
+export interface NotificationDeliveryDetail {
+  status: NotificationStatus;
+  attempts: number;
+  lastAttemptAt: string;
+  providerMessageId?: string;
+  lastError?: string;
+  extra?: Record<string, unknown>;
+}
+
+export type NotificationDeliveryMap = Partial<Record<NotificationChannel, NotificationDeliveryDetail>>;
 
 @Entity({ name: 'notifications' })
 export class Notification {
@@ -57,6 +69,9 @@ export class Notification {
 
   @Column({ type: 'simple-json', nullable: true })
   metadata?: Record<string, unknown> | null;
+
+  @Column({ type: 'simple-json', nullable: true })
+  deliveryMetadata?: NotificationDeliveryMap | null;
 
   @Column({ type: 'datetime', nullable: true })
   sentAt?: Date;

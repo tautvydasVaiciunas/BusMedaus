@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { DataSource } from 'typeorm';
 import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
 import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationChannel } from '../notifications/notification.entity';
 import { UsersService } from '../users/users.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -14,6 +15,12 @@ import { Hive } from '../hives/hive.entity';
 
 @Injectable()
 export class TasksService {
+  private static readonly CHANNEL_HINTS = [
+    NotificationChannel.IN_APP,
+    NotificationChannel.EMAIL,
+    NotificationChannel.PUSH
+  ];
+
   constructor(
     private readonly tasksRepository: TasksRepository,
     private readonly hivesRepository: HivesRepository,
@@ -79,7 +86,8 @@ export class TasksService {
       await this.notificationsService.notifyUsers([task.assignedTo.id], {
         title: `You were assigned to task ${task.title}`,
         body: `${task.createdBy.email} assigned you to ${task.title}.`,
-        metadata: { taskId: task.id, hiveId: task.hive.id }
+        metadata: { taskId: task.id, hiveId: task.hive.id },
+        channels: TasksService.CHANNEL_HINTS
       });
     }
 
@@ -145,7 +153,8 @@ export class TasksService {
       await this.notificationsService.notifyUsers([notifyAssignee], {
         title: `You were assigned to task ${task.title}`,
         body: `${task.createdBy.email} assigned you to ${task.title}.`,
-        metadata: { taskId: task.id, hiveId: task.hive.id }
+        metadata: { taskId: task.id, hiveId: task.hive.id },
+        channels: TasksService.CHANNEL_HINTS
       });
     }
 
@@ -167,7 +176,8 @@ export class TasksService {
     await this.notificationsService.notifyUsers(memberIds, {
       title: `Task ${task.title} status changed`,
       body: `Task ${task.title} status changed to ${task.status}.`,
-      metadata: { taskId: task.id, hiveId: task.hive.id }
+      metadata: { taskId: task.id, hiveId: task.hive.id },
+      channels: TasksService.CHANNEL_HINTS
     });
 
     return task;
