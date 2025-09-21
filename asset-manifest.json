@@ -4,10 +4,12 @@
     "main.js": "/static/js/main.c187a89e.js",
     "index.html": "/index.html",
     "main.47c0d640.css.map": "/static/css/main.47c0d640.css.map",
-    "main.c187a89e.js.map": "/static/js/main.c187a89e.js.map"
+    "main.c187a89e.js.map": "/static/js/main.c187a89e.js.map",
+    "notifications-service.js": "/static/js/notifications-service.js"
   },
   "entrypoints": [
     "static/css/main.47c0d640.css",
-    "static/js/main.c187a89e.js"
+    "static/js/main.c187a89e.js",
+    "static/js/notifications-service.js"
   ]
 }

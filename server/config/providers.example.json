@@ -1,0 +1,12 @@
+{
+  "sendgrid": {
+    "apiKeySecret": "SENDGRID_API_KEY",
+    "fromEmailSecret": "SENDGRID_FROM_EMAIL"
+  },
+  "firebase": {
+    "projectId": "${FIREBASE_PROJECT_ID}",
+    "clientEmailSecret": "FIREBASE_CLIENT_EMAIL",
+    "privateKeySecret": "FIREBASE_PRIVATE_KEY",
+    "webPushKeySecret": "FIREBASE_WEB_PUSH_KEY"
+  }
+}
