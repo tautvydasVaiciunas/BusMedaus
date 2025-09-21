@@ -1,0 +1,19 @@
+{
+  "name": "busmedaus-backend",
+  "version": "1.0.0",
+  "description": "Modular Express-style backend for BusMedaus",
+  "type": "module",
+  "scripts": {
+    "start": "node src/main.js",
+    "dev": "node src/main.js"
+  },
+  "keywords": [
+    "express",
+    "auth",
+    "hives",
+    "tasks",
+    "notifications"
+  ],
+  "author": "",
+  "license": "MIT"
+}
