@@ -4,11 +4,13 @@
   "description": "BusMedaus backend service with NestJS.",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/main.js",
-    "start:dev": "ts-node-dev --respawn src/main.ts",
+    "build": "npm run build:web && tsc -p tsconfig.json",
+    "build:web": "npm --prefix apps/web run build",
+    "dev:web": "npm --prefix apps/web run dev",
     "lint": "eslint .",
-    "test": "echo 'No automated tests yet'"
+    "lint:web": "npm --prefix apps/web run lint",
+    "test": "echo 'No automated tests yet'",
+    "test:web": "npm --prefix apps/web run test"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
