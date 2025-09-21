@@ -159,8 +159,8 @@ export class MediaService {
     }
 
     const isMember = memberIds.includes(user.userId);
-    if (!isMember) {
-      throw new ForbiddenException('You do not have permission to modify this media item');
+    if (isMember) {
+      return;
     }
 
     throw new ForbiddenException('You do not have permission to modify this media item');
