@@ -6,11 +6,42 @@ This repository contains a NestJS backend that powers the BusMedaus platform. It
 
 ```bash
 npm install
+export DB_HOST=localhost
+export DB_PORT=5432
+export DB_USERNAME=postgres
+export DB_PASSWORD=postgres
+export DB_NAME=busmedaus
 npm run build
-npm start
+npm run db:migrate
+npm run db:seed # optional
+node dist/main.js
 ```
 
-The service listens on `http://localhost:3000` and persists data to a local SQLite database stored under `data/app.sqlite`.
+The backend requires access to PostgreSQL. Connection details are read from the `DB_*` environment variables in `src/app.module.ts`.
+By default the service expects a database named `busmedaus` available on `localhost:5432` with the `postgres` user. Adjust the
+variables above to match your environment before running the migrations or starting the API. Once running, the server listens on
+`http://localhost:3000`.
+
+### Database migrations and seed data
+
+Run pending migrations with `npm run db:migrate`. This command executes the TypeORM migrations registered under `src/migrations`
+against the database configured by `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, and `DB_NAME`.
+
+Populate development fixtures by running `npm run db:seed` after the migrations complete. The seed script uses the same connection
+settings to insert baseline users, hives, and tasks that help during local testing.
+
+### Docker Compose workflow
+
+For a fully containerised setup, use the Compose file under `apps/api/docker-compose.yml`:
+
+```bash
+docker compose -f apps/api/docker-compose.yml --profile dev up --build
+```
+
+This spins up a PostgreSQL 16 instance alongside the API service. The API container installs dependencies, builds the project,
+runs database migrations, and launches the NestJS server connected to the `postgres` service. Stop the stack with
+`docker compose -f apps/api/docker-compose.yml --profile dev down`. The PostgreSQL data persists in the `postgres-data` named
+volume between runs.
 
 ## Web console
 
