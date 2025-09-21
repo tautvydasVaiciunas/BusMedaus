@@ -42,7 +42,7 @@ export class Task {
   @Column({ nullable: true })
   templateId?: string;
 
-  @ManyToOne(() => User, (user) => user.tasksCreated, { eager: true })
+  @ManyToOne(() => User, (user) => user.createdTasks, { eager: true })
   @JoinColumn({ name: 'createdById' })
   createdBy!: User;
 
