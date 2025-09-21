@@ -1,0 +1,316 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+ datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum HiveStatus {
+  ACTIVE
+  MONITORED
+  INACTIVE
+  NEEDS_ATTENTION
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  BLOCKED
+  CANCELLED
+}
+
+enum TaskStepStatus {
+  PENDING
+  COMPLETED
+  SKIPPED
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  READ
+}
+
+enum InspectionTaskStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+model User {
+  id             String           @id @default(cuid())
+  email          String           @unique
+  firstName      String
+  lastName       String
+  phoneNumber    String?          @db.VarChar(32)
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  roles          UserRole[]
+  groupMemberships GroupMembership[]
+  ownedHives     Hive[]           @relation("HiveManagers")
+  inspections    Inspection[]     @relation("UserInspections")
+  tasksAssigned  Task[]           @relation("TaskAssignee")
+  tasksCreated   Task[]           @relation("TaskCreator")
+  taskTemplates  TaskTemplate[]
+  notifications  Notification[]   @relation("NotificationUser")
+  harvests       HoneyHarvest[]   @relation("HarvestRecorder")
+  auditEvents    AuditEvent[]
+  mediaUploads   MediaAttachment[] @relation("MediaUploader")
+}
+
+model Role {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  description String?
+  permissions Json?
+  users       UserRole[]
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  roleId    String
+  assignedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  role Role @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, roleId])
+}
+
+model Group {
+  id          String            @id @default(cuid())
+  name        String            @unique
+  description String?
+  memberships GroupMembership[]
+}
+
+model GroupMembership {
+  id        String   @id @default(cuid())
+  groupId   String
+  userId    String
+  joinedAt  DateTime @default(now())
+  role      String?
+
+  group Group @relation(fields: [groupId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([groupId, userId])
+}
+
+model Hive {
+  id             String          @id @default(cuid())
+  name           String
+  apiaryName     String
+  location       String?
+  status         HiveStatus      @default(ACTIVE)
+  queenStatus    String?
+  temperament    String?
+  healthScore    Int?            @db.SmallInt
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  createdById    String
+
+  createdBy User @relation("HiveManagers", fields: [createdById], references: [id])
+  inspections Inspection[]
+  tasks       Task[]
+  harvests    HoneyHarvest[]
+  media       MediaAttachment[]
+}
+
+model Inspection {
+  id              String         @id @default(cuid())
+  hiveId          String
+  inspectorId     String
+  scheduledFor    DateTime
+  completedAt     DateTime?
+  overallCondition String?
+  queenSighted    Boolean?
+  broodPattern    String?
+  miteDropCount   Int?
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  hive      Hive   @relation(fields: [hiveId], references: [id])
+  inspector User   @relation("UserInspections", fields: [inspectorId], references: [id])
+  tasks     Task[]
+  inspectionTasks InspectionTask[]
+  notifications   Notification[]
+  media           MediaAttachment[]
+}
+
+model TaskTemplate {
+  id            String               @id @default(cuid())
+  name          String
+  description   String?
+  category      String?
+  createdById   String
+  isActive      Boolean              @default(true)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  createdBy User @relation(fields: [createdById], references: [id])
+  steps      TaskTemplateStep[]
+  inspectionTasks InspectionTask[]
+  tasks      Task[]
+}
+
+model TaskTemplateStep {
+  id             String   @id @default(cuid())
+  taskTemplateId String
+  sequence       Int
+  title          String
+  description    String?
+
+  template TaskTemplate @relation(fields: [taskTemplateId], references: [id])
+
+  @@unique([taskTemplateId, sequence])
+}
+
+model Task {
+  id             String        @id @default(cuid())
+  title          String
+  description    String?
+  status         TaskStatus    @default(PENDING)
+  priority       Int           @default(2)
+  dueDate        DateTime?
+  hiveId         String?
+  inspectionId   String?
+  templateId     String?
+  createdById    String
+  assignedToId   String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  hive       Hive?          @relation(fields: [hiveId], references: [id])
+  inspection Inspection?    @relation(fields: [inspectionId], references: [id])
+  template   TaskTemplate?  @relation(fields: [templateId], references: [id])
+  createdBy  User           @relation("TaskCreator", fields: [createdById], references: [id])
+  assignee   User?          @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  steps      TaskStep[]
+  notifications Notification[]
+  media      MediaAttachment[]
+  inspectionTasks InspectionTask[]
+}
+
+model TaskStep {
+  id          String         @id @default(cuid())
+  taskId      String
+  sequence    Int
+  title       String
+  description String?
+  status      TaskStepStatus @default(PENDING)
+  completedAt DateTime?
+  notes       String?
+
+  task Task @relation(fields: [taskId], references: [id])
+
+  @@unique([taskId, sequence])
+}
+
+model InspectionTask {
+  id               String                @id @default(cuid())
+  inspectionId     String
+  taskTemplateId   String
+  taskId           String?
+  status           InspectionTaskStatus  @default(NOT_STARTED)
+  notes            String?
+
+  inspection Inspection @relation(fields: [inspectionId], references: [id])
+  template   TaskTemplate @relation(fields: [taskTemplateId], references: [id])
+  task       Task?        @relation(fields: [taskId], references: [id])
+
+  @@unique([inspectionId, taskTemplateId])
+}
+
+model Notification {
+  id             String              @id @default(cuid())
+  userId         String
+  channel        NotificationChannel @default(IN_APP)
+  status         NotificationStatus  @default(PENDING)
+  title          String
+  body           String
+  relatedTaskId      String?
+  relatedInspectionId String?
+  relatedHarvestId    String?
+  auditEventId        String?
+  metadata        Json?
+  sentAt          DateTime?
+  readAt          DateTime?
+  createdAt       DateTime           @default(now())
+
+  user       User        @relation("NotificationUser", fields: [userId], references: [id])
+  task       Task?       @relation(fields: [relatedTaskId], references: [id])
+  inspection Inspection? @relation(fields: [relatedInspectionId], references: [id])
+  harvest    HoneyHarvest? @relation(fields: [relatedHarvestId], references: [id])
+  auditEvent AuditEvent?  @relation(fields: [auditEventId], references: [id])
+}
+
+model HoneyHarvest {
+  id             String    @id @default(cuid())
+  hiveId         String
+  recordedById   String
+  harvestDate    DateTime
+  framesHarvested Int?
+  weightKg       Float?
+  moisturePercent Float?
+  notes          String?
+  createdAt      DateTime  @default(now())
+
+  hive       Hive         @relation(fields: [hiveId], references: [id])
+  recordedBy User         @relation("HarvestRecorder", fields: [recordedById], references: [id])
+  media      MediaAttachment[]
+  notifications Notification[]
+}
+
+model MediaAttachment {
+  id            String    @id @default(cuid())
+  url           String
+  mimeType      String
+  description   String?
+  hiveId        String?
+  inspectionId  String?
+  taskId        String?
+  harvestId     String?
+  auditEventId  String?
+  uploadedById  String
+  capturedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  metadata      Json?
+
+  hive       Hive?          @relation(fields: [hiveId], references: [id])
+  inspection Inspection?    @relation(fields: [inspectionId], references: [id])
+  task       Task?          @relation(fields: [taskId], references: [id])
+  harvest    HoneyHarvest?  @relation(fields: [harvestId], references: [id])
+  auditEvent AuditEvent?    @relation(fields: [auditEventId], references: [id])
+  uploadedBy User           @relation("MediaUploader", fields: [uploadedById], references: [id])
+}
+
+model AuditEvent {
+  id            String    @id @default(cuid())
+  userId        String
+  entityType    String
+  entityId      String
+  action        String
+  summary       String?
+  metadata      Json?
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime  @default(now())
+
+  user        User            @relation(fields: [userId], references: [id])
+  notifications Notification[]
+  media        MediaAttachment[]
+}
