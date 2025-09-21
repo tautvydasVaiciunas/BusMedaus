@@ -19,6 +19,9 @@ export class UsersService {
     const passwordHash = await bcrypt.hash(dto.password, 12);
     const user = this.usersRepository.create({
       email: dto.email.toLowerCase(),
+      firstName: dto.firstName?.trim() || '',
+      lastName: dto.lastName?.trim() || '',
+      phoneNumber: dto.phoneNumber?.trim() ?? null,
       passwordHash,
       roles: dto.roles?.length ? dto.roles : ['member'],
       isActive: true
@@ -46,6 +49,18 @@ export class UsersService {
 
   async updateUser(id: string, dto: UpdateUserDto, manager?: EntityManager): Promise<User> {
     const user = await this.findByIdOrFail(id, manager);
+
+    if (dto.firstName !== undefined) {
+      user.firstName = dto.firstName.trim();
+    }
+
+    if (dto.lastName !== undefined) {
+      user.lastName = dto.lastName.trim();
+    }
+
+    if (dto.phoneNumber !== undefined) {
+      user.phoneNumber = dto.phoneNumber?.trim() ?? null;
+    }
 
     if (dto.roles) {
       if (!dto.roles.length) {

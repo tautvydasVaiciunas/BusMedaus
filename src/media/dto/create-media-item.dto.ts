@@ -1,16 +1,16 @@
-import { IsOptional, IsString, IsUrl, IsUUID, MaxLength } from 'class-validator';
+import { IsDateString, IsOptional, IsString, IsUrl, MaxLength, MinLength } from 'class-validator';
 
 export class CreateMediaItemDto {
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   hiveId!: string;
 
   @IsUrl()
   url!: string;
 
-  @IsOptional()
   @IsString()
-  @MaxLength(100)
-  type?: string;
+  @MaxLength(150)
+  mimeType!: string;
 
   @IsOptional()
   @IsString()
@@ -18,6 +18,29 @@ export class CreateMediaItemDto {
   description?: string;
 
   @IsOptional()
+  metadata?: Record<string, unknown>;
+
+  @IsOptional()
   @IsString()
-  metadata?: string;
+  @MinLength(1)
+  inspectionId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  taskId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  harvestId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  auditEventId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  capturedAt?: string;
 }

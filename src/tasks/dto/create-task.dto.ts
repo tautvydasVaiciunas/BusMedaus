@@ -1,8 +1,19 @@
-import { IsEnum, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  MinLength
+} from 'class-validator';
 import { TaskStatus } from '../task-status.enum';
 
 export class CreateTaskDto {
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   hiveId!: string;
 
   @IsString()
@@ -16,10 +27,31 @@ export class CreateTaskDto {
   description?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   assignedToId?: string;
 
   @IsOptional()
   @IsEnum(TaskStatus)
   status?: TaskStatus;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  priority?: number;
+
+  @IsOptional()
+  @IsDateString()
+  dueDate?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  inspectionId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  templateId?: string;
 }

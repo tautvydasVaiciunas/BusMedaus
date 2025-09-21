@@ -11,6 +11,9 @@ import { User } from './user.entity';
 interface SafeUser {
   id: string;
   email: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string | null;
   roles: string[];
   isActive: boolean;
   createdAt: Date;
@@ -18,8 +21,8 @@ interface SafeUser {
 }
 
 function toSafeUser(user: User): SafeUser {
-  const { id, email, roles, isActive, createdAt, updatedAt } = user;
-  return { id, email, roles, isActive, createdAt, updatedAt };
+  const { id, email, firstName, lastName, phoneNumber, roles, isActive, createdAt, updatedAt } = user;
+  return { id, email, firstName, lastName, phoneNumber: phoneNumber ?? null, roles, isActive, createdAt, updatedAt };
 }
 
 @Controller('users')

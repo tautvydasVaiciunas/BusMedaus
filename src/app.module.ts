@@ -13,10 +13,21 @@ import { UsersModule } from './users/users.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      type: 'sqlite',
-      database: 'data/app.sqlite',
+      type: 'postgres',
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT ?? '5432', 10),
+      username: process.env.DB_USERNAME || process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || 'postgres',
+      database: process.env.DB_NAME || 'busmedaus',
       autoLoadEntities: true,
-      synchronize: true
+      synchronize: false,
+      migrationsRun: true,
+      migrations: ['dist/migrations/*.js'],
+      migrationsTableName: 'typeorm_migrations',
+      ssl:
+        process.env.DB_SSL === 'true'
+          ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' }
+          : false
     }),
     AuditModule,
     AuthModule,

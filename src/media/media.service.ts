@@ -46,9 +46,14 @@ export class MediaService {
           hive,
           uploader,
           url: dto.url,
-          type: dto.type,
+          mimeType: dto.mimeType,
           description: dto.description,
-          metadata: dto.metadata
+          metadata: dto.metadata ?? null,
+          inspectionId: dto.inspectionId,
+          taskId: dto.taskId,
+          harvestId: dto.harvestId,
+          auditEventId: dto.auditEventId,
+          capturedAt: dto.capturedAt ? new Date(dto.capturedAt) : undefined
         },
         manager
       );
@@ -61,9 +66,10 @@ export class MediaService {
     recipients.delete(user.userId);
 
     if (recipients.size) {
-      await this.notificationsService.notifyUsers(Array.from(recipients), `New media added to ${media.hive.name}`, {
-        mediaId: media.id,
-        hiveId: media.hive.id
+      await this.notificationsService.notifyUsers(Array.from(recipients), {
+        title: `New media added to ${media.hive.name}`,
+        body: `${user.email} uploaded new media to ${media.hive.name}.`,
+        metadata: { mediaId: media.id, hiveId: media.hive.id }
       });
     }
 
@@ -78,14 +84,34 @@ export class MediaService {
       }
       this.ensureMediaManageAccess(user, mediaEntity);
 
-      if (dto.type !== undefined) {
-        mediaEntity.type = dto.type;
+      if (dto.mimeType !== undefined) {
+        mediaEntity.mimeType = dto.mimeType;
       }
       if (dto.description !== undefined) {
         mediaEntity.description = dto.description;
       }
       if (dto.metadata !== undefined) {
         mediaEntity.metadata = dto.metadata;
+      }
+
+      if (dto.inspectionId !== undefined) {
+        mediaEntity.inspectionId = dto.inspectionId || undefined;
+      }
+
+      if (dto.taskId !== undefined) {
+        mediaEntity.taskId = dto.taskId || undefined;
+      }
+
+      if (dto.harvestId !== undefined) {
+        mediaEntity.harvestId = dto.harvestId || undefined;
+      }
+
+      if (dto.auditEventId !== undefined) {
+        mediaEntity.auditEventId = dto.auditEventId || undefined;
+      }
+
+      if (dto.capturedAt !== undefined) {
+        mediaEntity.capturedAt = dto.capturedAt ? new Date(dto.capturedAt) : undefined;
       }
 
       return this.mediaRepository.save(mediaEntity, manager);

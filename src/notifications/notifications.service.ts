@@ -3,6 +3,21 @@ import { DataSource } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { Notification } from './notification.entity';
 import { NotificationsRepository } from './notifications.repository';
+import { NotificationChannel, NotificationStatus } from './notification.entity';
+
+export interface NotificationPayload {
+  title: string;
+  body: string;
+  channel?: NotificationChannel;
+  status?: NotificationStatus;
+  metadata?: Record<string, unknown>;
+  relatedTaskId?: string;
+  relatedInspectionId?: string;
+  relatedHarvestId?: string;
+  auditEventId?: string;
+  sentAt?: Date;
+  readAt?: Date;
+}
 
 @Injectable()
 export class NotificationsService {
@@ -12,11 +27,7 @@ export class NotificationsService {
     private readonly dataSource: DataSource
   ) {}
 
-  async notifyUsers(
-    userIds: string[],
-    message: string,
-    metadata?: Record<string, unknown>
-  ): Promise<Notification[]> {
+  async notifyUsers(userIds: string[], payload: NotificationPayload): Promise<Notification[]> {
     if (!userIds.length) {
       return [];
     }
@@ -28,9 +39,17 @@ export class NotificationsService {
         const notification = this.notificationsRepository.create(
           {
             user,
-            message,
-            metadata: metadata ? JSON.stringify(metadata) : undefined,
-            read: false
+            title: payload.title,
+            body: payload.body,
+            channel: payload.channel ?? NotificationChannel.IN_APP,
+            status: payload.status ?? NotificationStatus.PENDING,
+            metadata: payload.metadata ?? null,
+            relatedTaskId: payload.relatedTaskId,
+            relatedInspectionId: payload.relatedInspectionId,
+            relatedHarvestId: payload.relatedHarvestId,
+            auditEventId: payload.auditEventId,
+            sentAt: payload.sentAt,
+            readAt: payload.readAt ?? null
           },
           manager
         );
@@ -51,7 +70,8 @@ export class NotificationsService {
       if (!notification || notification.user.id !== userId) {
         throw new NotFoundException('Notification not found');
       }
-      notification.read = true;
+      notification.status = NotificationStatus.READ;
+      notification.readAt = new Date();
       return this.notificationsRepository.save(notification, manager);
     });
   }
