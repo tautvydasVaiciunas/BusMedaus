@@ -16,5 +16,18 @@
   "rules": {
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }]
-  }
+  },
+  "overrides": [
+    {
+      "files": [
+        "src/**/*.spec.ts",
+        "src/**/*.test.ts",
+        "src/**/__tests__/**/*.ts"
+      ],
+      "env": {
+        "jest": true,
+        "node": true
+      }
+    }
+  ]
 }
