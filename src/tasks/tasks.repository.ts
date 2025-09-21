@@ -25,7 +25,7 @@ export class TasksRepository {
   findById(id: string, manager?: EntityManager): Promise<Task | null> {
     return this.getRepo(manager).findOne({
       where: { id },
-      relations: ['hive', 'assignedTo', 'hive.owner', 'hive.members']
+      relations: ['hive', 'assignedTo', 'createdBy', 'hive.owner', 'hive.members']
     });
   }
 
@@ -36,7 +36,7 @@ export class TasksRepository {
   findByHive(hiveId: string): Promise<Task[]> {
     return this.repository.find({
       where: { hive: { id: hiveId } },
-      relations: ['hive', 'assignedTo'],
+      relations: ['hive', 'assignedTo', 'createdBy'],
       order: { createdAt: 'DESC' }
     });
   }

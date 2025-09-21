@@ -7,9 +7,17 @@ import { NotificationsService } from './notifications.service';
 
 interface NotificationResponse {
   id: string;
-  message: string;
+  title: string;
+  body: string;
+  channel: string;
+  status: string;
   metadata?: Record<string, unknown> | null;
-  read: boolean;
+  relatedTaskId?: string;
+  relatedInspectionId?: string;
+  relatedHarvestId?: string;
+  auditEventId?: string;
+  sentAt?: Date | null;
+  readAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,9 +25,17 @@ interface NotificationResponse {
 function mapNotification(notification: Notification): NotificationResponse {
   return {
     id: notification.id,
-    message: notification.message,
-    metadata: notification.metadata ? JSON.parse(notification.metadata) : null,
-    read: notification.read,
+    title: notification.title,
+    body: notification.body,
+    channel: notification.channel,
+    status: notification.status,
+    metadata: notification.metadata ?? null,
+    relatedTaskId: notification.relatedTaskId ?? undefined,
+    relatedInspectionId: notification.relatedInspectionId ?? undefined,
+    relatedHarvestId: notification.relatedHarvestId ?? undefined,
+    auditEventId: notification.auditEventId ?? undefined,
+    sentAt: notification.sentAt ?? null,
+    readAt: notification.readAt ?? null,
     createdAt: notification.createdAt,
     updatedAt: notification.updatedAt
   };

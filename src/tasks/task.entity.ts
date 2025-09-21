@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -23,13 +24,30 @@ export class Task {
   @Column({ nullable: true })
   description?: string;
 
-  @Column({ type: 'text', default: TaskStatus.TODO })
+  @Column({ type: 'text', default: TaskStatus.PENDING })
   status!: TaskStatus;
+
+  @Column({ type: 'int', default: 2 })
+  priority!: number;
+
+  @Column({ type: 'timestamp', nullable: true })
+  dueDate?: Date;
 
   @ManyToOne(() => Hive, (hive) => hive.tasks, { onDelete: 'CASCADE', eager: true })
   hive!: Hive;
 
+  @Column({ nullable: true })
+  inspectionId?: string;
+
+  @Column({ nullable: true })
+  templateId?: string;
+
+  @ManyToOne(() => User, (user) => user.tasksCreated, { eager: true })
+  @JoinColumn({ name: 'createdById' })
+  createdBy!: User;
+
   @ManyToOne(() => User, (user) => user.assignedTasks, { nullable: true, eager: true })
+  @JoinColumn({ name: 'assignedToId' })
   assignedTo?: User | null;
 
   @OneToMany(() => Comment, (comment) => comment.task)

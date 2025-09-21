@@ -1,10 +1,10 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsDateString, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class UpdateMediaItemDto {
   @IsOptional()
   @IsString()
-  @MaxLength(100)
-  type?: string;
+  @MaxLength(150)
+  mimeType?: string;
 
   @IsOptional()
   @IsString()
@@ -12,6 +12,29 @@ export class UpdateMediaItemDto {
   description?: string;
 
   @IsOptional()
+  metadata?: Record<string, unknown>;
+
+  @IsOptional()
   @IsString()
-  metadata?: string;
+  @MinLength(1)
+  inspectionId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  taskId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  harvestId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  auditEventId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  capturedAt?: string;
 }

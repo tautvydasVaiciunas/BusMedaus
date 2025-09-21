@@ -1,4 +1,15 @@
-import { IsBoolean, IsEnum, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  MinLength
+} from 'class-validator';
 import { TaskStatus } from '../task-status.enum';
 
 export class UpdateTaskDto {
@@ -14,7 +25,8 @@ export class UpdateTaskDto {
   description?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
+  @MinLength(1)
   assignedToId?: string;
 
   @IsOptional()
@@ -24,4 +36,24 @@ export class UpdateTaskDto {
   @IsOptional()
   @IsBoolean()
   unassign?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  priority?: number;
+
+  @IsOptional()
+  @IsDateString()
+  dueDate?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  inspectionId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  templateId?: string;
 }

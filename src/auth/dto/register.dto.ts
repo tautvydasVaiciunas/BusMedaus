@@ -1,8 +1,34 @@
-import { ArrayNotEmpty, ArrayUnique, IsArray, IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  ArrayUnique,
+  IsArray,
+  IsEmail,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength
+} from 'class-validator';
 
 export class RegisterDto {
   @IsEmail()
   email!: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(100)
+  firstName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(100)
+  lastName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  phoneNumber?: string;
 
   @IsString()
   @MinLength(8)

@@ -1,7 +1,7 @@
-import { IsString, IsUUID } from 'class-validator';
+import { IsString, MinLength } from 'class-validator';
 
 export class ManageHiveMemberDto {
   @IsString()
-  @IsUUID()
+  @MinLength(1)
   userId!: string;
 }

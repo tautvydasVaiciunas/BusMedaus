@@ -10,9 +10,14 @@ import { MediaService } from './media.service';
 interface MediaResponse {
   id: string;
   url: string;
-  type?: string;
+  mimeType: string;
   description?: string;
-  metadata?: string | null;
+  metadata?: Record<string, unknown> | null;
+  inspectionId?: string;
+  taskId?: string;
+  harvestId?: string;
+  auditEventId?: string;
+  capturedAt?: Date | null;
   hive: { id: string; name: string };
   uploader: { id: string; email: string };
   createdAt: Date;
@@ -23,9 +28,14 @@ function mapMedia(item: MediaItem): MediaResponse {
   return {
     id: item.id,
     url: item.url,
-    type: item.type,
+    mimeType: item.mimeType,
     description: item.description,
     metadata: item.metadata ?? null,
+    inspectionId: item.inspectionId ?? undefined,
+    taskId: item.taskId ?? undefined,
+    harvestId: item.harvestId ?? undefined,
+    auditEventId: item.auditEventId ?? undefined,
+    capturedAt: item.capturedAt ?? null,
     hive: { id: item.hive.id, name: item.hive.name },
     uploader: { id: item.uploader.id, email: item.uploader.email },
     createdAt: item.createdAt,

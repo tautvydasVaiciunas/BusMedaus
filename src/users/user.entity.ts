@@ -23,6 +23,15 @@ export class User {
   @Column({ unique: true })
   email!: string;
 
+  @Column({ default: '' })
+  firstName!: string;
+
+  @Column({ default: '' })
+  lastName!: string;
+
+  @Column({ nullable: true })
+  phoneNumber?: string | null;
+
   @Column()
   passwordHash!: string;
 
@@ -47,6 +56,9 @@ export class User {
 
   @OneToMany(() => Task, (task) => task.assignedTo)
   assignedTasks!: Task[];
+
+  @OneToMany(() => Task, (task) => task.createdBy)
+  createdTasks!: Task[];
 
   @OneToMany(() => Notification, (notification) => notification.user)
   notifications!: Notification[];

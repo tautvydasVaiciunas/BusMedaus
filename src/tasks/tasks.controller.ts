@@ -24,8 +24,13 @@ interface TaskResponse {
   title: string;
   description?: string;
   status: string;
+  priority: number;
+  dueDate?: Date | null;
+  inspectionId?: string;
+  templateId?: string;
   hive: TaskHiveSummary;
   assignedTo?: TaskUserSummary | null;
+  createdBy: TaskUserSummary;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,8 +48,13 @@ function mapTask(task: Task): TaskResponse {
     title: task.title,
     description: task.description,
     status: task.status,
+    priority: task.priority,
+    dueDate: task.dueDate ?? null,
+    inspectionId: task.inspectionId ?? undefined,
+    templateId: task.templateId ?? undefined,
     hive: { id: task.hive.id, name: task.hive.name },
     assignedTo: mapUser(task.assignedTo),
+    createdBy: mapUser(task.createdBy)!,
     createdAt: task.createdAt,
     updatedAt: task.updatedAt
   };

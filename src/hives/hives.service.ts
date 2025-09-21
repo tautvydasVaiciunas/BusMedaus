@@ -6,7 +6,7 @@ import { UsersService } from '../users/users.service';
 import { CreateHiveDto } from './dto/create-hive.dto';
 import { ManageHiveMemberDto } from './dto/manage-hive-member.dto';
 import { UpdateHiveDto } from './dto/update-hive.dto';
-import { Hive } from './hive.entity';
+import { Hive, HiveStatus } from './hive.entity';
 import { HivesRepository } from './hives.repository';
 
 @Injectable()
@@ -59,7 +59,13 @@ export class HivesService {
       const hiveEntity = this.hivesRepository.create(
         {
           name: dto.name,
+          apiaryName: dto.apiaryName ?? dto.name,
           description: dto.description,
+          location: dto.location,
+          status: dto.status ?? HiveStatus.ACTIVE,
+          queenStatus: dto.queenStatus,
+          temperament: dto.temperament,
+          healthScore: dto.healthScore,
           owner,
           members: Array.from(uniqueMembers.values())
         },
@@ -71,8 +77,10 @@ export class HivesService {
 
     const memberIds = hive.members.filter((member) => member.id !== user.userId).map((member) => member.id);
     if (memberIds.length) {
-      await this.notificationsService.notifyUsers(memberIds, `${user.email} added you to hive ${hive.name}`, {
-        hiveId: hive.id
+      await this.notificationsService.notifyUsers(memberIds, {
+        title: `You were added to hive ${hive.name}`,
+        body: `${user.email} added you to hive ${hive.name}.`,
+        metadata: { hiveId: hive.id }
       });
     }
 
@@ -91,8 +99,26 @@ export class HivesService {
       if (dto.name) {
         hiveEntity.name = dto.name;
       }
+      if (dto.apiaryName !== undefined) {
+        hiveEntity.apiaryName = dto.apiaryName;
+      }
       if (dto.description !== undefined) {
         hiveEntity.description = dto.description;
+      }
+      if (dto.location !== undefined) {
+        hiveEntity.location = dto.location;
+      }
+      if (dto.status !== undefined) {
+        hiveEntity.status = dto.status;
+      }
+      if (dto.queenStatus !== undefined) {
+        hiveEntity.queenStatus = dto.queenStatus;
+      }
+      if (dto.temperament !== undefined) {
+        hiveEntity.temperament = dto.temperament;
+      }
+      if (dto.healthScore !== undefined) {
+        hiveEntity.healthScore = dto.healthScore;
       }
       if (dto.memberIds) {
         const members = [];
@@ -110,8 +136,11 @@ export class HivesService {
 
     await this.notificationsService.notifyUsers(
       hive.members.map((member) => member.id),
-      `Hive ${hive.name} was updated`,
-      { hiveId: hive.id }
+      {
+        title: `Hive ${hive.name} was updated`,
+        body: `Hive ${hive.name} details were updated.`,
+        metadata: { hiveId: hive.id }
+      }
     );
 
     return hive;
@@ -144,8 +173,10 @@ export class HivesService {
       return this.hivesRepository.save(hiveEntity, manager);
     });
 
-    await this.notificationsService.notifyUsers([dto.userId], `You were added to hive ${hive.name}`, {
-      hiveId: hive.id
+    await this.notificationsService.notifyUsers([dto.userId], {
+      title: `You were added to hive ${hive.name}`,
+      body: `${user.email} added you to hive ${hive.name}.`,
+      metadata: { hiveId: hive.id }
     });
 
     return hive;
@@ -167,8 +198,10 @@ export class HivesService {
       return this.hivesRepository.save(hiveEntity, manager);
     });
 
-    await this.notificationsService.notifyUsers([memberId], `You were removed from hive ${hive.name}`, {
-      hiveId: hive.id
+    await this.notificationsService.notifyUsers([memberId], {
+      title: `You were removed from hive ${hive.name}`,
+      body: `${user.email} removed you from hive ${hive.name}.`,
+      metadata: { hiveId: hive.id }
     });
 
     return hive;

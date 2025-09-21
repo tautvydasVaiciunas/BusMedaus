@@ -64,10 +64,10 @@ export class MessagingService {
     });
 
     if (recipients.length) {
-      await this.notificationsService.notifyUsers(recipients, `New comment on task ${comment.task.title}`, {
-        taskId: comment.task.id,
-        hiveId: comment.task.hive.id,
-        commentId: comment.id
+      await this.notificationsService.notifyUsers(recipients, {
+        title: `New comment on task ${comment.task.title}`,
+        body: `${user.email} commented on ${comment.task.title}.`,
+        metadata: { taskId: comment.task.id, hiveId: comment.task.hive.id, commentId: comment.id }
       });
     }
 

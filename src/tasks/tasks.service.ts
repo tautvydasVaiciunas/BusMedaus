@@ -48,6 +48,8 @@ export class TasksService {
       }
       this.ensureHiveAccess(user, hive);
 
+      const creator = await this.usersService.findByIdOrFail(user.userId, manager);
+
       let assignee = null;
       if (dto.assignedToId) {
         assignee = await this.usersService.findByIdOrFail(dto.assignedToId, manager);
@@ -58,8 +60,13 @@ export class TasksService {
         {
           title: dto.title,
           description: dto.description,
-          status: dto.status ?? TaskStatus.TODO,
+          status: dto.status ?? TaskStatus.PENDING,
+          priority: dto.priority ?? 2,
+          dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
           hive,
+          inspectionId: dto.inspectionId,
+          templateId: dto.templateId,
+          createdBy: creator,
           assignedTo: assignee
         },
         manager
@@ -69,11 +76,11 @@ export class TasksService {
     });
 
     if (task.assignedTo) {
-      await this.notificationsService.notifyUsers(
-        [task.assignedTo.id],
-        `You were assigned to task ${task.title}`,
-        { taskId: task.id, hiveId: task.hive.id }
-      );
+      await this.notificationsService.notifyUsers([task.assignedTo.id], {
+        title: `You were assigned to task ${task.title}`,
+        body: `${task.createdBy.email} assigned you to ${task.title}.`,
+        metadata: { taskId: task.id, hiveId: task.hive.id }
+      });
     }
 
     return task;
@@ -114,16 +121,32 @@ export class TasksService {
         taskEntity.status = dto.status;
       }
 
+      if (dto.priority !== undefined) {
+        taskEntity.priority = dto.priority;
+      }
+
+      if (dto.dueDate !== undefined) {
+        taskEntity.dueDate = dto.dueDate ? new Date(dto.dueDate) : undefined;
+      }
+
+      if (dto.inspectionId !== undefined) {
+        taskEntity.inspectionId = dto.inspectionId || undefined;
+      }
+
+      if (dto.templateId !== undefined) {
+        taskEntity.templateId = dto.templateId || undefined;
+      }
+
       const saved = await this.tasksRepository.save(taskEntity, manager);
       return { task: saved, notifyAssignee: notifyAssignedUser };
     });
 
     if (notifyAssignee) {
-      await this.notificationsService.notifyUsers(
-        [notifyAssignee],
-        `You were assigned to task ${task.title}`,
-        { taskId: task.id, hiveId: task.hive.id }
-      );
+      await this.notificationsService.notifyUsers([notifyAssignee], {
+        title: `You were assigned to task ${task.title}`,
+        body: `${task.createdBy.email} assigned you to ${task.title}.`,
+        metadata: { taskId: task.id, hiveId: task.hive.id }
+      });
     }
 
     return task;
@@ -141,9 +164,10 @@ export class TasksService {
     });
 
     const memberIds = task.hive.members.map((member) => member.id);
-    await this.notificationsService.notifyUsers(memberIds, `Task ${task.title} status changed to ${task.status}`, {
-      taskId: task.id,
-      hiveId: task.hive.id
+    await this.notificationsService.notifyUsers(memberIds, {
+      title: `Task ${task.title} status changed`,
+      body: `Task ${task.title} status changed to ${task.status}.`,
+      metadata: { taskId: task.id, hiveId: task.hive.id }
     });
 
     return task;
