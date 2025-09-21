@@ -1,9 +1,11 @@
-import { Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthenticatedUser, CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Notification } from './notification.entity';
+import { Notification, NotificationDeliveryMap } from './notification.entity';
+import { NotificationSubscription } from './notification-subscription.entity';
 import { NotificationsService } from './notifications.service';
+import { CreateNotificationSubscriptionDto } from './dto/create-notification-subscription.dto';
 
 interface NotificationResponse {
   id: string;
@@ -20,6 +22,7 @@ interface NotificationResponse {
   readAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  deliveryMetadata?: NotificationDeliveryMap | null;
 }
 
 function mapNotification(notification: Notification): NotificationResponse {
@@ -37,7 +40,30 @@ function mapNotification(notification: Notification): NotificationResponse {
     sentAt: notification.sentAt ?? null,
     readAt: notification.readAt ?? null,
     createdAt: notification.createdAt,
-    updatedAt: notification.updatedAt
+    updatedAt: notification.updatedAt,
+    deliveryMetadata: notification.deliveryMetadata ?? null
+  };
+}
+
+interface NotificationSubscriptionResponse {
+  id: string;
+  token: string;
+  platform: string;
+  metadata?: Record<string, unknown> | null;
+  lastUsedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+function mapSubscription(subscription: NotificationSubscription): NotificationSubscriptionResponse {
+  return {
+    id: subscription.id,
+    token: subscription.token,
+    platform: subscription.platform,
+    metadata: subscription.metadata ?? null,
+    lastUsedAt: subscription.lastUsedAt ?? null,
+    createdAt: subscription.createdAt,
+    updatedAt: subscription.updatedAt
   };
 }
 
@@ -59,5 +85,29 @@ export class NotificationsController {
   ): Promise<NotificationResponse> {
     const notification = await this.notificationsService.markAsRead(user.userId, id);
     return mapNotification(notification);
+  }
+
+  @Get('subscriptions')
+  async listSubscriptions(@CurrentUser() user: AuthenticatedUser): Promise<NotificationSubscriptionResponse[]> {
+    const subscriptions = await this.notificationsService.listSubscriptionsForUser(user.userId);
+    return subscriptions.map(mapSubscription);
+  }
+
+  @Post('subscriptions')
+  async createSubscription(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: CreateNotificationSubscriptionDto
+  ): Promise<NotificationSubscriptionResponse> {
+    const subscription = await this.notificationsService.registerSubscription(user.userId, {
+      token: dto.token,
+      platform: dto.platform,
+      metadata: dto.metadata ?? undefined
+    });
+    return mapSubscription(subscription);
+  }
+
+  @Delete('subscriptions/:id')
+  async deleteSubscription(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string): Promise<void> {
+    await this.notificationsService.removeSubscription(user.userId, id);
   }
 }

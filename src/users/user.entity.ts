@@ -11,6 +11,7 @@ import {
 import { Hive } from '../hives/hive.entity';
 import { Task } from '../tasks/task.entity';
 import { Notification } from '../notifications/notification.entity';
+import { NotificationSubscription } from '../notifications/notification-subscription.entity';
 import { Comment } from '../messaging/comment.entity';
 import { MediaItem } from '../media/media-item.entity';
 import { RefreshToken } from '../auth/refresh-token.entity';
@@ -62,6 +63,9 @@ export class User {
 
   @OneToMany(() => Notification, (notification) => notification.user)
   notifications!: Notification[];
+
+  @OneToMany(() => NotificationSubscription, (subscription) => subscription.user)
+  notificationSubscriptions!: NotificationSubscription[];
 
   @OneToMany(() => Comment, (comment) => comment.author)
   comments!: Comment[];

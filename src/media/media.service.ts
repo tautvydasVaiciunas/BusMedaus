@@ -3,6 +3,7 @@ import { DataSource } from 'typeorm';
 import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
 import { HivesRepository } from '../hives/hives.repository';
 import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationChannel } from '../notifications/notification.entity';
 import { UsersService } from '../users/users.service';
 import { CreateMediaItemDto } from './dto/create-media-item.dto';
 import { UpdateMediaItemDto } from './dto/update-media-item.dto';
@@ -11,6 +12,12 @@ import { MediaRepository } from './media.repository';
 
 @Injectable()
 export class MediaService {
+  private static readonly CHANNEL_HINTS = [
+    NotificationChannel.IN_APP,
+    NotificationChannel.EMAIL,
+    NotificationChannel.PUSH
+  ];
+
   constructor(
     private readonly mediaRepository: MediaRepository,
     private readonly hivesRepository: HivesRepository,
@@ -69,7 +76,8 @@ export class MediaService {
       await this.notificationsService.notifyUsers(Array.from(recipients), {
         title: `New media added to ${media.hive.name}`,
         body: `${user.email} uploaded new media to ${media.hive.name}.`,
-        metadata: { mediaId: media.id, hiveId: media.hive.id }
+        metadata: { mediaId: media.id, hiveId: media.hive.id },
+        channels: MediaService.CHANNEL_HINTS
       });
     }
 

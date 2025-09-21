@@ -3,10 +3,12 @@ import { User } from '../users/user.entity';
 import { Hive } from '../hives/hive.entity';
 import { Task } from '../tasks/task.entity';
 import { Notification } from '../notifications/notification.entity';
+import { NotificationSubscription } from '../notifications/notification-subscription.entity';
 import { MediaItem } from '../media/media-item.entity';
 import { Comment } from '../messaging/comment.entity';
 import { RefreshToken } from '../auth/refresh-token.entity';
 import { AlignTypeormSchema1700000000000 } from '../migrations/1700000000000-align-typeorm-schema';
+import { NotificationTransports1700000000100 } from '../migrations/1700000000100-notification-transports';
 
 const getBoolean = (value: string | undefined, fallback = false): boolean => {
   if (value === undefined) {
@@ -23,8 +25,8 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'busmedaus',
   ssl: getBoolean(process.env.DB_SSL) ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' } : false,
-  entities: [User, Hive, Task, Notification, MediaItem, Comment, RefreshToken],
-  migrations: [AlignTypeormSchema1700000000000],
+  entities: [User, Hive, Task, Notification, NotificationSubscription, MediaItem, Comment, RefreshToken],
+  migrations: [AlignTypeormSchema1700000000000, NotificationTransports1700000000100],
   migrationsTableName: 'typeorm_migrations',
   synchronize: false
 });

@@ -41,3 +41,17 @@ npm run test:web
 - **Auditing middleware** that records every state-changing request and exposes the logs through secure admin endpoints.
 
 All endpoints apply request validation and respond with sanitized payloads that omit sensitive fields.
+
+## Notifications configuration
+
+Email and push notifications are now sent through SendGrid and Firebase Cloud Messaging when credentials are present. Configure the transports through environment variables:
+
+| Variable | Purpose |
+| --- | --- |
+| `SENDGRID_API_KEY` | API key for SendGrid requests. |
+| `SENDGRID_FROM_EMAIL` | Verified sender used for outbound messages. |
+| `FIREBASE_PROJECT_ID` | Firebase project identifier for FCM. |
+| `FIREBASE_CLIENT_EMAIL` | Service account client email for FCM. |
+| `FIREBASE_PRIVATE_KEY` | Service account private key (use `\n` for newlines). |
+
+Client devices register push tokens by calling `POST /notifications/subscriptions`, and tokens can be revoked with `DELETE /notifications/subscriptions/:id`. Each domain module now passes channel hints so that the `NotificationsService` fans out in-app, email, and push payloads while recording delivery status metadata on the notification records.

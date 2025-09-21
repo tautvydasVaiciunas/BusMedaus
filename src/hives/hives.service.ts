@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { DataSource } from 'typeorm';
 import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
 import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationChannel } from '../notifications/notification.entity';
 import { UsersService } from '../users/users.service';
 import { CreateHiveDto } from './dto/create-hive.dto';
 import { ManageHiveMemberDto } from './dto/manage-hive-member.dto';
@@ -11,6 +12,12 @@ import { HivesRepository } from './hives.repository';
 
 @Injectable()
 export class HivesService {
+  private static readonly CHANNEL_HINTS = [
+    NotificationChannel.IN_APP,
+    NotificationChannel.EMAIL,
+    NotificationChannel.PUSH
+  ];
+
   constructor(
     private readonly hivesRepository: HivesRepository,
     private readonly usersService: UsersService,
@@ -80,7 +87,8 @@ export class HivesService {
       await this.notificationsService.notifyUsers(memberIds, {
         title: `You were added to hive ${hive.name}`,
         body: `${user.email} added you to hive ${hive.name}.`,
-        metadata: { hiveId: hive.id }
+        metadata: { hiveId: hive.id },
+        channels: HivesService.CHANNEL_HINTS
       });
     }
 
@@ -139,7 +147,8 @@ export class HivesService {
       {
         title: `Hive ${hive.name} was updated`,
         body: `Hive ${hive.name} details were updated.`,
-        metadata: { hiveId: hive.id }
+        metadata: { hiveId: hive.id },
+        channels: HivesService.CHANNEL_HINTS
       }
     );
 
@@ -176,7 +185,8 @@ export class HivesService {
     await this.notificationsService.notifyUsers([dto.userId], {
       title: `You were added to hive ${hive.name}`,
       body: `${user.email} added you to hive ${hive.name}.`,
-      metadata: { hiveId: hive.id }
+      metadata: { hiveId: hive.id },
+      channels: HivesService.CHANNEL_HINTS
     });
 
     return hive;
@@ -201,7 +211,8 @@ export class HivesService {
     await this.notificationsService.notifyUsers([memberId], {
       title: `You were removed from hive ${hive.name}`,
       body: `${user.email} removed you from hive ${hive.name}.`,
-      metadata: { hiveId: hive.id }
+      metadata: { hiveId: hive.id },
+      channels: HivesService.CHANNEL_HINTS
     });
 
     return hive;

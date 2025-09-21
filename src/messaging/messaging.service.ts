@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { DataSource } from 'typeorm';
 import { AuthenticatedUser } from '../auth/decorators/current-user.decorator';
 import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationChannel } from '../notifications/notification.entity';
 import { UsersService } from '../users/users.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { Comment } from './comment.entity';
@@ -10,6 +11,12 @@ import { TasksRepository } from '../tasks/tasks.repository';
 
 @Injectable()
 export class MessagingService {
+  private static readonly CHANNEL_HINTS = [
+    NotificationChannel.IN_APP,
+    NotificationChannel.EMAIL,
+    NotificationChannel.PUSH
+  ];
+
   constructor(
     private readonly commentsRepository: CommentsRepository,
     private readonly tasksRepository: TasksRepository,
@@ -67,7 +74,8 @@ export class MessagingService {
       await this.notificationsService.notifyUsers(recipients, {
         title: `New comment on task ${comment.task.title}`,
         body: `${user.email} commented on ${comment.task.title}.`,
-        metadata: { taskId: comment.task.id, hiveId: comment.task.hive.id, commentId: comment.id }
+        metadata: { taskId: comment.task.id, hiveId: comment.task.hive.id, commentId: comment.id },
+        channels: MessagingService.CHANNEL_HINTS
       });
     }
 

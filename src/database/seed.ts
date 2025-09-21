@@ -3,7 +3,11 @@ import { AppDataSource } from './data-source';
 import { User } from '../users/user.entity';
 import { Hive, HiveStatus } from '../hives/hive.entity';
 import { Task, TaskStatus } from '../tasks/task.entity';
-import { Notification, NotificationChannel, NotificationStatus } from '../notifications/notification.entity';
+import {
+  Notification,
+  NotificationChannel,
+  NotificationStatus
+} from '../notifications/notification.entity';
 import { MediaItem } from '../media/media-item.entity';
 import * as bcrypt from 'bcryptjs';
 
@@ -69,7 +73,14 @@ async function seed() {
         channel: NotificationChannel.IN_APP,
         status: NotificationStatus.SENT,
         relatedTaskId: task.id,
-        metadata: { priority: task.priority },
+        metadata: { priority: task.priority, channels: [NotificationChannel.IN_APP] },
+        deliveryMetadata: {
+          [NotificationChannel.IN_APP]: {
+            status: NotificationStatus.SENT,
+            attempts: 1,
+            lastAttemptAt: new Date().toISOString()
+          }
+        },
         sentAt: new Date()
       });
       await notificationRepo.save(notification);
