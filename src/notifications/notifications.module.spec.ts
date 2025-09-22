@@ -1,5 +1,7 @@
 import 'reflect-metadata';
 import { MODULE_METADATA } from '@nestjs/common/constants';
+import type { App, Credential } from 'firebase-admin/app';
+import type { Messaging } from 'firebase-admin/messaging';
 import { FIREBASE_MESSAGING } from './notifications.constants';
 
 jest.mock('firebase-admin/app', () => ({
@@ -30,10 +32,12 @@ describe('firebase messaging provider', () => {
     >;
     jest.clearAllMocks();
 
-    mockApp.cert.mockReturnValue('mock-cert');
+    mockApp.cert.mockReturnValue('mock-cert' as unknown as Credential);
     mockApp.getApps.mockReturnValue([]);
-    mockApp.initializeApp.mockImplementation((_config, name: string) => ({ name }));
-    mockMessaging.getMessaging.mockReturnValue('mock-messaging');
+    mockApp.initializeApp.mockImplementation(
+      (_config, name?: string) => ({ name } as unknown as App)
+    );
+    mockMessaging.getMessaging.mockReturnValue('mock-messaging' as unknown as Messaging);
   });
 
   afterEach(() => {
