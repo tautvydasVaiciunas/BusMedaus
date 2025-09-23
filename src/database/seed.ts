@@ -2,7 +2,8 @@ import 'reflect-metadata';
 import { AppDataSource } from './data-source';
 import { User } from '../users/user.entity';
 import { Hive, HiveStatus } from '../hives/hive.entity';
-import { Task, TaskStatus } from '../tasks/task.entity';
+import { Task } from '../tasks/task.entity';
+import { TaskStatus } from '../tasks/task-status.enum';
 import {
   Notification,
   NotificationChannel,
