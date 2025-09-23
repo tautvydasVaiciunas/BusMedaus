@@ -13,6 +13,18 @@ export type HiveUserSummary = {
   roles: string[];
 };
 
+export type SafeUser = {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  phoneNumber: string | null;
+  roles: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type Hive = {
   id: string;
   name: string;

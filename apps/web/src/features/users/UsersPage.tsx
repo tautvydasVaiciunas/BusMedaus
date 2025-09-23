@@ -1,22 +1,35 @@
 import { Card } from "../../components/ui/Card";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "../../lib/apiClient";
-import type { TeamMember } from "../../types";
+import { ApiClientError, apiClient } from "../../lib/apiClient";
+import type { SafeUser, TeamMember } from "../../types";
+import { mapSafeUsersToTeamMembers } from "./userMapper";
 
 const UsersPage = () => {
   const {
-    data: members,
+    data: teamMembers = [],
     isLoading,
     isError,
     error
-  } = useQuery<TeamMember[]>({
+  } = useQuery<SafeUser[], ApiClientError, TeamMember[]>({
     queryKey: ["users"],
-    queryFn: () => apiClient.get<TeamMember[]>("/users"),
-    staleTime: 60_000
+    queryFn: () => apiClient.get<SafeUser[]>("/users"),
+    select: (users) => mapSafeUsersToTeamMembers(users),
+    staleTime: 60_000,
+    retry: (failureCount, err) => {
+      if (err instanceof ApiClientError && err.status === 403) {
+        return false;
+      }
+      return failureCount < 1;
+    }
   });
 
-  const team = members ?? [];
+  const isForbidden = isError && error instanceof ApiClientError && error.status === 403;
+  const friendlyError = isForbidden
+    ? "Ši sritis prieinama tik administratoriams. Susisiekite su sistemos administratoriumi dėl prieigos."
+    : error instanceof Error
+      ? error.message
+      : "Nepavyko įkelti komandos narių.";
 
   return (
     <div className="space-y-6">
@@ -37,10 +50,10 @@ const UsersPage = () => {
           </div>
         ) : isError ? (
           <div className="rounded-2xl border border-rose-500/40 bg-rose-500/10 p-6 text-sm text-rose-200">
-            {error instanceof Error ? error.message : "Nepavyko įkelti komandos narių."}
+            {friendlyError}
           </div>
         ) : (
-          team.map((member) => (
+          teamMembers.map((member) => (
             <Card
               key={member.id}
               title={member.name}
