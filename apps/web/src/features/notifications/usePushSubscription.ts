@@ -9,7 +9,13 @@ type RegisterOptions = {
   metadata?: Record<string, unknown>;
 };
 
+type NotificationSubscriptionResponse = {
+  id: string;
+  token: string;
+};
+
 type UsePushSubscriptionResult = {
+  subscriptionId: string | null;
   token: string | null;
   status: "idle" | "pending" | "success" | "error";
   error: string | null;
@@ -17,7 +23,7 @@ type UsePushSubscriptionResult = {
   isSupported: boolean;
   isRegistered: boolean;
   register: (options?: RegisterOptions) => Promise<string>;
-  revoke: (tokenOverride?: string | null) => Promise<void>;
+  revoke: (subscriptionIdOverride?: string | null) => Promise<void>;
 };
 
 const resolvePermission = async (
@@ -37,6 +43,7 @@ const initialPermission: PermissionState =
     : "unsupported";
 
 export const usePushSubscription = (): UsePushSubscriptionResult => {
+  const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -94,18 +101,22 @@ export const usePushSubscription = (): UsePushSubscriptionResult => {
           throw new Error("Nepavyko gauti pranešimų rakto.");
         }
 
-        await apiClient.post("/notifications/subscriptions", {
-          token: resolvedToken,
-          metadata: {
-            platform: "web",
-            permission: permissionResult,
-            ...options?.metadata
+        const response = await apiClient.post<NotificationSubscriptionResponse>(
+          "/notifications/subscriptions",
+          {
+            token: resolvedToken,
+            metadata: {
+              platform: "web",
+              permission: permissionResult,
+              ...options?.metadata
+            }
           }
-        });
+        );
 
-        setToken(resolvedToken);
+        setSubscriptionId(response.id);
+        setToken(response.token);
         setStatus("success");
-        return resolvedToken;
+        return response.token;
       } catch (registrationError) {
         const message =
           registrationError instanceof Error
@@ -122,11 +133,11 @@ export const usePushSubscription = (): UsePushSubscriptionResult => {
   );
 
   const revoke = useCallback<UsePushSubscriptionResult["revoke"]>(
-    async (tokenOverride) => {
-      const activeToken = tokenOverride ?? token;
+    async (subscriptionIdOverride) => {
+      const activeSubscriptionId = subscriptionIdOverride ?? subscriptionId;
 
-      if (!activeToken) {
-        const message = "Nėra prenumeratos rakto, kurį būtų galima atšaukti.";
+      if (!activeSubscriptionId) {
+        const message = "Nėra prenumeratos identifikatoriaus, kurį būtų galima atšaukti.";
         setError(message);
         setStatus("error");
         throw new Error(message);
@@ -136,7 +147,10 @@ export const usePushSubscription = (): UsePushSubscriptionResult => {
       setError(null);
 
       try {
-        await apiClient.delete(`/notifications/subscriptions/${encodeURIComponent(activeToken)}`);
+        await apiClient.delete(
+          `/notifications/subscriptions/${encodeURIComponent(activeSubscriptionId)}`
+        );
+        setSubscriptionId(null);
         setToken(null);
         setStatus("idle");
       } catch (revokeError) {
@@ -149,21 +163,22 @@ export const usePushSubscription = (): UsePushSubscriptionResult => {
         throw revokeError instanceof Error ? revokeError : new Error(message);
       }
     },
-    [token]
+    [subscriptionId]
   );
 
   return useMemo(
     () => ({
+      subscriptionId,
       token,
       status,
       error,
       permission,
       isSupported: permission !== "unsupported",
-      isRegistered: Boolean(token),
+      isRegistered: Boolean(subscriptionId),
       register,
       revoke
     }),
-    [error, permission, register, revoke, status, token]
+    [error, permission, register, revoke, status, subscriptionId, token]
   );
 };
 
