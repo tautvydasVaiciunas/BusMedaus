@@ -9,8 +9,7 @@ COPY .eslintrc.json ./
 COPY jest.config.ts ./
 COPY apps/web/package*.json ./apps/web/
 
-RUN npm install \
-  && npm install --prefix apps/web
+RUN npm install
 
 COPY . .
 
