@@ -3,9 +3,21 @@ import { appRoutes } from "../../routes/routeConfig";
 import { SidebarNavLink } from "./SidebarNavLink";
 import { StatusBadge } from "../ui/StatusBadge";
 
+type SidebarContentProps = {
+  onNavigate?: () => void;
+};
+
 export const Sidebar = () => {
   return (
     <aside className="hidden w-72 border-r border-slate-800 bg-slate-950/90 px-6 py-8 lg:flex lg:flex-col">
+      <SidebarContent />
+    </aside>
+  );
+};
+
+export const SidebarContent = ({ onNavigate }: SidebarContentProps) => {
+  return (
+    <>
       <div className="mb-8 flex items-center gap-3">
         <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-amber-500 text-lg font-semibold text-slate-900 shadow-lg shadow-amber-500/30">
           BM
@@ -21,9 +33,9 @@ export const Sidebar = () => {
         Naujos realaus laiko analizės bus prieinamos su API integracija.
       </div>
 
-      <nav className="flex-1 space-y-1">
+      <nav className="flex-1 space-y-1" aria-label="Pagrindinė navigacija">
         {appRoutes.map((route) => (
-          <SidebarNavLink key={route.id} item={route} />
+          <SidebarNavLink key={route.id} item={route} onNavigate={onNavigate} />
         ))}
       </nav>
 
@@ -44,6 +56,6 @@ export const Sidebar = () => {
           </li>
         </ul>
       </div>
-    </aside>
+    </>
   );
 };

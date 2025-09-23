@@ -4,13 +4,15 @@ import clsx from "clsx";
 
 type SidebarNavLinkProps = {
   item: AppRoute;
+  onNavigate?: () => void;
 };
 
-export const SidebarNavLink = ({ item }: SidebarNavLinkProps) => {
+export const SidebarNavLink = ({ item, onNavigate }: SidebarNavLinkProps) => {
   return (
     <NavLink
       to={item.path ?? "/"}
       end={item.path === "/"}
+      onClick={onNavigate}
       className={({ isActive }) =>
         clsx(
           "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition",
