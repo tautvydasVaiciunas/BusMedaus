@@ -8,10 +8,10 @@ import {
   BellAlertIcon,
   ShieldCheckIcon
 } from "@heroicons/react/24/outline";
-import type { RouteObject } from "react-router-dom";
+import type { PathRouteProps } from "react-router-dom";
 import { lazy, type SVGProps } from "react";
 
-export type AppRoute = RouteObject & {
+export type AppRoute = PathRouteProps & {
   id: string;
   label: string;
   description: string;

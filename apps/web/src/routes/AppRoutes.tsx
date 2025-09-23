@@ -16,8 +16,14 @@ export const AppRoutes = () => {
   return (
     <Suspense fallback={<LoadingState label="Įkeliame modulį" />}>
       <Routes>
-        {appRoutes.map((route) => (
-          <Route key={route.id} {...route} />
+        {appRoutes.map(({
+          id,
+          icon: _icon,
+          label: _label,
+          description: _description,
+          ...routeProps
+        }) => (
+          <Route key={id} {...routeProps} />
         ))}
         <Route path="*" element={<NotFound />} />
       </Routes>
