@@ -66,6 +66,8 @@ describe("mapNotificationResponse", () => {
     expect(result.title).toBe("Padidėjusi drėgmė");
     expect(result.description).toBe("Viršijo ribą");
     expect(result.type).toBe("įspėjimas");
+    expect(result.readAt).toBeNull();
+    expect(result.isRead).toBe(false);
     expect(result.createdAt).toBe(
       new Intl.DateTimeFormat("lt-LT", {
         dateStyle: "medium",
@@ -91,5 +93,25 @@ describe("mapNotificationResponse", () => {
     expect(result.description).toBe("Nėra papildomos informacijos.");
     expect(result.type).toBe("informacija");
     expect(result.createdAt).toBe("invalid");
+    expect(result.readAt).toBeNull();
+    expect(result.isRead).toBe(false);
+  });
+
+  it("marks notifications as read when readAt is present", () => {
+    const payload: NotificationResponse = {
+      ...base,
+      id: "n-3",
+      readAt: "2024-07-02T09:15:00.000Z"
+    };
+
+    const result = mapNotificationResponse(payload);
+    expect(result.isRead).toBe(true);
+    expect(result.readAt).toBe(
+      new Intl.DateTimeFormat("lt-LT", {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: "Europe/Vilnius"
+      }).format(new Date(payload.readAt!))
+    );
   });
 });

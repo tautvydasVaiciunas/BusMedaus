@@ -60,6 +60,8 @@ export type Notification = {
   description: string;
   type: "įspėjimas" | "informacija" | "kritinis";
   createdAt: string;
+  readAt: string | null;
+  isRead: boolean;
 };
 
 export type NotificationDeliveryDetail = {

@@ -98,3 +98,5 @@ Email and push notifications are now sent through SendGrid and Firebase Cloud Me
 | `FIREBASE_PRIVATE_KEY` | Service account private key (literal `\n` escapes are converted to newlines). |
 
 Client devices register push tokens by calling `POST /notifications/subscriptions`, and tokens can be revoked with `DELETE /notifications/subscriptions/:id`. Each domain module now passes channel hints so that the `NotificationsService` fans out in-app, email, and push payloads while recording delivery status metadata on the notification records.
+
+Front-end integracijos pavyzdžiai bei naršyklės konfigūracijos žingsniai aprašyti faile [`docs/browser-push.md`](docs/browser-push.md).

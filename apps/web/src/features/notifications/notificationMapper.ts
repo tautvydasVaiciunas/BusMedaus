@@ -72,13 +72,16 @@ export const formatNotificationTimestamp = (value: string | Date | null | undefi
 export const mapNotificationResponse = (payload: NotificationResponse): Notification => {
   const title = payload.title.trim() || DEFAULT_NOTIFICATION_TITLE;
   const description = payload.body.trim() || DEFAULT_NOTIFICATION_DESCRIPTION;
+  const readAt = payload.readAt ? formatNotificationTimestamp(payload.readAt) : null;
 
   return {
     id: payload.id,
     title,
     description,
     type: mapNotificationSeverity(payload.metadata ?? null, payload.status),
-    createdAt: formatNotificationTimestamp(payload.createdAt)
+    createdAt: formatNotificationTimestamp(payload.createdAt),
+    readAt,
+    isRead: Boolean(readAt)
   };
 };
 

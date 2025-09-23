@@ -103,7 +103,9 @@ const mapAlert = (alert: DashboardApiAlert): Notification => {
     title: alert.title,
     description: alert.description,
     type,
-    createdAt: alert.createdAt
+    createdAt: alert.createdAt,
+    readAt: null,
+    isRead: false
   };
 };
 
