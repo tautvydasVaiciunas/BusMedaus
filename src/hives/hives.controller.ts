@@ -14,6 +14,15 @@ interface HiveUserSummary {
   roles: string[];
 }
 
+interface HiveTelemetry {
+  location: string | null;
+  queenStatus: string | null;
+  productivityIndex: number | null;
+  lastInspectionAt: string | null;
+  temperature: number | null;
+  humidity: number | null;
+}
+
 interface HiveResponse {
   id: string;
   name: string;
@@ -22,6 +31,7 @@ interface HiveResponse {
   members: HiveUserSummary[];
   createdAt: Date;
   updatedAt: Date;
+  telemetry: HiveTelemetry;
 }
 
 function mapUser(user: { id: string; email: string; roles: string[] }): HiveUserSummary {
@@ -36,7 +46,15 @@ function mapHive(hive: Hive): HiveResponse {
     owner: mapUser(hive.owner),
     members: hive.members.map(mapUser),
     createdAt: hive.createdAt,
-    updatedAt: hive.updatedAt
+    updatedAt: hive.updatedAt,
+    telemetry: {
+      location: hive.location ?? null,
+      queenStatus: hive.queenStatus ?? null,
+      productivityIndex: hive.productivityIndex ?? null,
+      lastInspectionAt: hive.lastInspectionAt ? hive.lastInspectionAt.toISOString() : null,
+      temperature: hive.temperature ?? null,
+      humidity: hive.humidity ?? null
+    }
   };
 }
 

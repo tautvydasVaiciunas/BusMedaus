@@ -43,6 +43,27 @@ export class Hive {
   @Column({ nullable: true })
   queenStatus?: string;
 
+  @Column({
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    transformer: {
+      to: (value?: number | null) => value,
+      from: (value: string | null) => (value === null ? null : Number(value))
+    }
+  })
+  productivityIndex?: number | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastInspectionAt?: Date | null;
+
+  @Column({ type: 'double precision', nullable: true })
+  temperature?: number | null;
+
+  @Column({ type: 'double precision', nullable: true })
+  humidity?: number | null;
+
   @Column({ nullable: true })
   temperament?: string;
 

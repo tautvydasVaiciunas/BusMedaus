@@ -10,6 +10,33 @@ const queenToneMap: Record<string, "success" | "warning" | "danger" | "info"> = 
   keisti: "danger"
 };
 
+const isFiniteNumber = (value: unknown): value is number => typeof value === "number" && Number.isFinite(value);
+
+const formatInspectionSubtitle = (isoDate: string | null | undefined) => {
+  if (!isoDate) {
+    return "Paskutinė apžiūra nenurodyta";
+  }
+
+  const parsed = new Date(isoDate);
+  if (Number.isNaN(parsed.getTime())) {
+    return "Paskutinė apžiūra nenurodyta";
+  }
+
+  return `Paskutinė apžiūra ${parsed.toLocaleString("lt-LT", {
+    dateStyle: "short",
+    timeStyle: "short"
+  })}`;
+};
+
+const formatLocation = (value: string | null | undefined) => {
+  if (!value) {
+    return "Vieta nenustatyta";
+  }
+
+  const trimmed = value.trim();
+  return trimmed ? trimmed : "Vieta nenustatyta";
+};
+
 const HivesPage = () => {
   const {
     data: hives,
@@ -46,38 +73,57 @@ const HivesPage = () => {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {hiveList.map((hive) => (
-          <Card
-            key={hive.id}
-            title={`${hive.name}`}
-            subtitle={`Paskutinė apžiūra ${hive.lastInspection}`}
-            accent={<StatusBadge tone={queenToneMap[hive.queenStatus] ?? "warning"}>{hive.queenStatus}</StatusBadge>}
-            className="space-y-4"
-          >
-            <dl className="grid grid-cols-2 gap-3 text-sm text-slate-300">
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-slate-500">Avilio ID</dt>
-                <dd className="font-semibold text-slate-100">{hive.id}</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-slate-500">Vieta</dt>
-                <dd>{hive.location}</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-slate-500">Produktyvumo indeksas</dt>
-                <dd className="font-semibold text-brand-300">{hive.productivityIndex}</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-slate-500">Temperatūra</dt>
-                <dd>{hive.temperature.toFixed(1)}°C</dd>
-              </div>
-              <div>
-                <dt className="text-xs uppercase tracking-wide text-slate-500">Drėgmė</dt>
-                <dd>{hive.humidity}%</dd>
-              </div>
-            </dl>
-          </Card>
-        ))}
+        {hiveList.map((hive) => {
+          const telemetry = hive.telemetry;
+          const queenStatusRaw = typeof telemetry.queenStatus === "string" ? telemetry.queenStatus.trim() : "";
+          const queenStatusToneKey = queenStatusRaw.toLowerCase();
+          const queenStatusTone = queenToneMap[queenStatusToneKey] ?? "warning";
+          const queenStatusLabel = queenStatusRaw || "Nežinomas statusas";
+          const locationText = formatLocation(telemetry.location);
+          const productivityText = isFiniteNumber(telemetry.productivityIndex)
+            ? telemetry.productivityIndex.toFixed(1)
+            : "Nėra duomenų";
+          const temperatureText = isFiniteNumber(telemetry.temperature)
+            ? `${telemetry.temperature.toFixed(1)}°C`
+            : "Nėra duomenų";
+          const humidityText = isFiniteNumber(telemetry.humidity)
+            ? `${Math.round(telemetry.humidity)}%`
+            : "Nėra duomenų";
+          const subtitle = formatInspectionSubtitle(telemetry.lastInspectionAt);
+
+          return (
+            <Card
+              key={hive.id}
+              title={`${hive.name}`}
+              subtitle={subtitle}
+              accent={<StatusBadge tone={queenStatusTone}>{queenStatusLabel}</StatusBadge>}
+              className="space-y-4"
+            >
+              <dl className="grid grid-cols-2 gap-3 text-sm text-slate-300">
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">Avilio ID</dt>
+                  <dd className="font-semibold text-slate-100">{hive.id}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">Vieta</dt>
+                  <dd>{locationText}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">Produktyvumo indeksas</dt>
+                  <dd className="font-semibold text-brand-300">{productivityText}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">Temperatūra</dt>
+                  <dd>{temperatureText}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-slate-500">Drėgmė</dt>
+                  <dd>{humidityText}</dd>
+                </div>
+              </dl>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
