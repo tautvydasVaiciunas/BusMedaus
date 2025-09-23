@@ -11,6 +11,7 @@ export DB_PORT=5432
 export DB_USERNAME=postgres
 export DB_PASSWORD=postgres
 export DB_NAME=busmedaus
+export WEB_ORIGIN=http://localhost:5173
 npm run build
 npm run db:migrate
 npm run db:seed # optional
@@ -21,6 +22,14 @@ The backend requires access to PostgreSQL. Connection details are read from the 
 By default the service expects a database named `busmedaus` available on `localhost:5432` with the `postgres` user. Adjust the
 variables above to match your environment before running the migrations or starting the API. Once running, the server listens on
 `http://localhost:3000`.
+
+### CORS configuration
+
+The backend enables Cross-Origin Resource Sharing (CORS) for browser-based clients. Set the `WEB_ORIGIN` environment variable to
+a comma-separated list of allowed origins (for example,
+`https://app.example.com,https://admin.example.com`). If the variable is not set, the API allows requests from
+`http://localhost:5173` to match the Vite development server used by the web console. Remember to restart the API after changing
+this value so NestJS picks up the updated configuration.
 
 ### Database migrations and seed data
 
