@@ -50,6 +50,35 @@ export type Notification = {
   createdAt: string;
 };
 
+export type NotificationDeliveryDetail = {
+  status: string;
+  attempts: number;
+  lastAttemptAt: string;
+  providerMessageId?: string;
+  lastError?: string;
+  extra?: Record<string, unknown>;
+};
+
+export type NotificationDeliveryMap = Partial<Record<string, NotificationDeliveryDetail>>;
+
+export type NotificationResponse = {
+  id: string;
+  title: string;
+  body: string;
+  channel: string;
+  status: string;
+  metadata?: Record<string, unknown> | null;
+  relatedTaskId?: string | null;
+  relatedInspectionId?: string | null;
+  relatedHarvestId?: string | null;
+  auditEventId?: string | null;
+  sentAt?: string | null;
+  readAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deliveryMetadata?: NotificationDeliveryMap | null;
+};
+
 export type MediaItem = {
   id: string;
   hiveId: string;

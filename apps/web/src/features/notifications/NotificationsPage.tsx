@@ -3,9 +3,10 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { BellAlertIcon } from "@heroicons/react/24/outline";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../../lib/apiClient";
-import type { Notification } from "../../types";
+import type { Notification, NotificationResponse } from "../../types";
+import { mapNotificationResponse } from "./notificationMapper";
 
-const toneMap: Record<string, "success" | "warning" | "danger" | "info"> = {
+const toneMap: Record<Notification["type"], "success" | "warning" | "danger" | "info"> = {
   informacija: "info",
   įspėjimas: "warning",
   kritinis: "danger"
@@ -17,10 +18,11 @@ const NotificationsPage = () => {
     isLoading,
     isError,
     error
-  } = useQuery<Notification[]>({
+  } = useQuery<NotificationResponse[], Error, Notification[]>({
     queryKey: ["notifications"],
-    queryFn: () => apiClient.get<Notification[]>("/notifications"),
-    staleTime: 15_000
+    queryFn: () => apiClient.get<NotificationResponse[]>("/notifications"),
+    staleTime: 15_000,
+    select: (data) => data.map(mapNotificationResponse)
   });
 
   const items = notificationsList ?? [];
@@ -52,18 +54,24 @@ const NotificationsPage = () => {
               {error instanceof Error ? error.message : "Nepavyko įkelti pranešimų."}
             </li>
           ) : items.length ? (
-            items.map((item) => (
-              <li key={item.id} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-100">{item.title}</p>
-                    <p className="mt-1 text-xs text-slate-400">{item.description}</p>
+            items.map((item) => {
+              const badgeTone = toneMap[item.type] ?? "neutral";
+              const badgeLabel =
+                typeof item.type === "string" ? item.type.toUpperCase() : "PRANEŠIMAS";
+
+              return (
+                <li key={item.id} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-100">{item.title}</p>
+                      <p className="mt-1 text-xs text-slate-400">{item.description}</p>
+                    </div>
+                    <StatusBadge tone={badgeTone}>{badgeLabel}</StatusBadge>
                   </div>
-                  <StatusBadge tone={toneMap[item.type] ?? "neutral"}>{item.type.toUpperCase()}</StatusBadge>
-                </div>
-                <p className="mt-3 text-[11px] uppercase tracking-wide text-slate-500">{item.createdAt}</p>
-              </li>
-            ))
+                  <p className="mt-3 text-[11px] uppercase tracking-wide text-slate-500">{item.createdAt}</p>
+                </li>
+              );
+            })
           ) : (
             <li className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-400">
               Šiuo metu naujų pranešimų nėra.
