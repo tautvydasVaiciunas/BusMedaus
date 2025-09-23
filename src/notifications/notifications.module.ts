@@ -45,15 +45,18 @@ const firebaseMessagingProvider = {
     }
 
     try {
-      // Convert escaped '\n' sequences (single backslash) into actual line breaks for Firebase credentials
-      // coming from `.env` files before passing them to the Firebase admin SDK.
-      const sanitizedPrivateKey = privateKey.replace(/\\n/g, '\n');
+      // Convert literal "\\n" sequences from env files into real newlines before creating the Firebase credential.
+      const privateKeyWithNewlines = privateKey.replace(/\\n/g, '\n');
       const existing = getApps().find((app) => app.name === 'busmedaus-notifications');
       const app =
         existing ||
         initializeApp(
           {
-            credential: cert({ projectId, clientEmail, privateKey: sanitizedPrivateKey })
+            credential: cert({
+              projectId,
+              clientEmail,
+              privateKey: privateKeyWithNewlines
+            })
           },
           'busmedaus-notifications'
         );
