@@ -95,7 +95,7 @@ Email and push notifications are now sent through SendGrid and Firebase Cloud Me
 | `SENDGRID_FROM_EMAIL` | Verified sender used for outbound messages. |
 | `FIREBASE_PROJECT_ID` | Firebase project identifier for FCM. |
 | `FIREBASE_CLIENT_EMAIL` | Service account client email for FCM. |
-| `FIREBASE_PRIVATE_KEY` | Service account private key (literal `\n` escapes are converted to newlines). |
+| `FIREBASE_PRIVATE_KEY` | Service account private key (literal `\n` escapes with a single backslash are converted to newlines). |
 
 Client devices register push tokens by calling `POST /notifications/subscriptions`, and tokens can be revoked with `DELETE /notifications/subscriptions/:id`. Each domain module now passes channel hints so that the `NotificationsService` fans out in-app, email, and push payloads while recording delivery status metadata on the notification records.
 

@@ -67,7 +67,8 @@ describe('firebase messaging provider', () => {
     expect(mockApp.cert).toHaveBeenCalledTimes(1);
 
     const [credentials] = mockApp.cert.mock.calls[0] as [{ privateKey: string }];
-    const expectedSanitizedKey = ['line-one', 'line-two'].join('\n');
+    const expectedSanitizedKey = `line-one
+line-two`;
     expect(credentials.privateKey).toBe(expectedSanitizedKey);
     expect(credentials.privateKey).toContain('\n');
     expect(credentials.privateKey).not.toContain('\\n');
