@@ -4,15 +4,15 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { BellAlertIcon, ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../../lib/apiClient";
-import type { DashboardStat, Notification, Task } from "../../types";
+import type { DashboardAlert, DashboardStat, Task } from "../../types";
 
 export type DashboardSnapshot = {
   stats: DashboardStat[];
-  alerts: Notification[];
+  alerts: DashboardAlert[];
   tasks: Task[];
 };
 
-const statusToneMap: Record<string, "success" | "warning" | "danger" | "info"> = {
+const statusToneMap: Record<DashboardAlert["type"], "success" | "warning" | "danger" | "info"> = {
   įspėjimas: "warning",
   informacija: "info",
   kritinis: "danger"

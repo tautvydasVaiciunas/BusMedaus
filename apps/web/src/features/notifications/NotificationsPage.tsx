@@ -5,10 +5,69 @@ import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../../lib/apiClient";
 import type { Notification } from "../../types";
 
-const toneMap: Record<string, "success" | "warning" | "danger" | "info"> = {
-  informacija: "info",
-  įspėjimas: "warning",
-  kritinis: "danger"
+const statusLabelMap: Record<Notification["status"], string> = {
+  PENDING: "Laukiama išsiuntimo",
+  SENT: "Išsiųsta",
+  FAILED: "Pristatymas nepavyko",
+  READ: "Perskaityta"
+};
+
+const statusToneMap: Record<Notification["status"], "success" | "warning" | "danger" | "info" | "neutral"> = {
+  PENDING: "warning",
+  SENT: "info",
+  FAILED: "danger",
+  READ: "success"
+};
+
+const channelLabelMap: Record<Notification["channel"], string> = {
+  IN_APP: "Programėlė",
+  EMAIL: "El. paštas",
+  SMS: "SMS",
+  PUSH: "Push pranešimas"
+};
+
+const formatTimestamp = (value?: string | null) => {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat("lt-LT", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(date);
+};
+
+const resolveDescription = (notification: Notification) => {
+  if (notification.body?.trim()) {
+    return notification.body.trim();
+  }
+
+  const channelLabel = channelLabelMap[notification.channel] ?? notification.channel;
+  return `${channelLabel} pranešimas`;
+};
+
+const buildTimelineLabel = (notification: Notification) => {
+  const readAt = formatTimestamp(notification.readAt);
+  if (notification.status === "READ" && readAt) {
+    return `Perskaityta ${readAt}`;
+  }
+
+  const sentAt = formatTimestamp(notification.sentAt);
+  if (sentAt) {
+    return `Išsiųsta ${sentAt}`;
+  }
+
+  const createdAt = formatTimestamp(notification.createdAt);
+  if (createdAt) {
+    return `Sukurta ${createdAt}`;
+  }
+
+  return null;
 };
 
 const NotificationsPage = () => {
@@ -52,18 +111,28 @@ const NotificationsPage = () => {
               {error instanceof Error ? error.message : "Nepavyko įkelti pranešimų."}
             </li>
           ) : items.length ? (
-            items.map((item) => (
-              <li key={item.id} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-100">{item.title}</p>
-                    <p className="mt-1 text-xs text-slate-400">{item.description}</p>
+            items.map((item) => {
+              const statusLabel = statusLabelMap[item.status] ?? item.status;
+              const channelLabel = channelLabelMap[item.channel] ?? item.channel;
+              const description = resolveDescription(item);
+              const timelineLabel = buildTimelineLabel(item);
+              const metaLine = [channelLabel, timelineLabel].filter(Boolean).join(" • ");
+
+              return (
+                <li key={item.id} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-100">{item.title}</p>
+                      <p className="mt-1 text-xs text-slate-400">{description}</p>
+                    </div>
+                    <StatusBadge tone={statusToneMap[item.status] ?? "neutral"}>
+                      {statusLabel.toUpperCase()}
+                    </StatusBadge>
                   </div>
-                  <StatusBadge tone={toneMap[item.type] ?? "neutral"}>{item.type.toUpperCase()}</StatusBadge>
-                </div>
-                <p className="mt-3 text-[11px] uppercase tracking-wide text-slate-500">{item.createdAt}</p>
-              </li>
-            ))
+                  <p className="mt-3 text-[11px] uppercase tracking-wide text-slate-500">{metaLine}</p>
+                </li>
+              );
+            })
           ) : (
             <li className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-400">
               Šiuo metu naujų pranešimų nėra.
