@@ -1,7 +1,13 @@
-import { MagnifyingGlassIcon, BellAlertIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, BellAlertIcon, ArrowRightOnRectangleIcon, Bars3Icon } from "@heroicons/react/24/outline";
 import { useAuth } from "../../hooks/useAuth";
 
-export const TopBar = () => {
+type TopBarProps = {
+  isMobileNavOpen: boolean;
+  onToggleMobileNav: () => void;
+  mobileNavId: string;
+};
+
+export const TopBar = ({ isMobileNavOpen, onToggleMobileNav, mobileNavId }: TopBarProps) => {
   const { user, logout, isProcessing } = useAuth();
   const displayName = user?.name ?? "BusMedaus narys";
   const displayRole = user?.role ?? user?.email ?? "Komandos narys";
@@ -10,6 +16,17 @@ export const TopBar = () => {
     <header className="sticky top-0 z-10 border-b border-slate-800 bg-slate-950/70 backdrop-blur">
       <div className="flex items-center justify-between px-6 py-4 lg:px-10">
         <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={onToggleMobileNav}
+            aria-controls={mobileNavId}
+            aria-expanded={isMobileNavOpen}
+            aria-haspopup="dialog"
+            aria-label="Perjungti navigaciją"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-800 bg-slate-900/70 text-slate-200 transition hover:border-brand-500/60 hover:text-brand-200 focus:outline-none focus:ring-2 focus:ring-brand-500 lg:hidden"
+          >
+            <Bars3Icon className="h-6 w-6" />
+          </button>
           <div className="hidden flex-col lg:flex">
             <span className="text-xs uppercase tracking-wide text-slate-400">Sveiki sugrįžę</span>
             <span className="text-lg font-semibold text-white">BusMedaus valdymo centras</span>
