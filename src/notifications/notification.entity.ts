@@ -73,10 +73,10 @@ export class Notification {
   @Column({ type: 'simple-json', nullable: true })
   deliveryMetadata?: NotificationDeliveryMap | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   sentAt?: Date;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   readAt?: Date;
 
   @CreateDateColumn()

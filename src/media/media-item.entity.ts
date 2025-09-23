@@ -47,7 +47,7 @@ export class MediaItem {
   @JoinColumn({ name: 'uploaderId' })
   uploader!: User;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   capturedAt?: Date;
 
   @CreateDateColumn()

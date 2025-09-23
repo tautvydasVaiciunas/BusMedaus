@@ -29,7 +29,7 @@ export class NotificationSubscription {
   @Column({ type: 'simple-json', nullable: true })
   metadata?: Record<string, unknown> | null;
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   lastUsedAt?: Date;
 
   @CreateDateColumn()
