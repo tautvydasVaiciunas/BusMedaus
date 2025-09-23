@@ -5,6 +5,7 @@ import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { MediaModule } from './media/media.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { TasksModule } from './tasks/tasks.module';
 import { HivesModule } from './hives/hives.module';
@@ -36,7 +37,8 @@ import { UsersModule } from './users/users.module';
     TasksModule,
     NotificationsModule,
     MessagingModule,
-    MediaModule
+    MediaModule,
+    DashboardModule
   ]
 })
 export class AppModule implements NestModule {

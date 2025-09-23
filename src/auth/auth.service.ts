@@ -144,9 +144,11 @@ export class AuthService {
       roles: user.roles,
       type: 'access'
     };
-    const accessToken = jwt.sign(accessPayload, this.jwtSecret, {
-      expiresIn: this.accessTokenExpiry
-    });
+    const accessToken = jwt.sign(
+      accessPayload,
+      this.jwtSecret as jwt.Secret,
+      { expiresIn: this.accessTokenExpiry } as jwt.SignOptions
+    ) as string;
 
     const tokenId = randomUUID();
     const refreshPayload: JwtPayload = {
@@ -157,9 +159,11 @@ export class AuthService {
       tokenId
     };
 
-    const refreshToken = jwt.sign(refreshPayload, this.jwtSecret, {
-      expiresIn: Math.floor(this.refreshTokenTtlMs / 1000)
-    });
+    const refreshToken = jwt.sign(
+      refreshPayload,
+      this.jwtSecret as jwt.Secret,
+      { expiresIn: Math.floor(this.refreshTokenTtlMs / 1000) } as jwt.SignOptions
+    ) as string;
 
     const refreshExpiresAt = new Date(Date.now() + this.refreshTokenTtlMs);
     const tokenHash = await bcrypt.hash(refreshToken, 12);

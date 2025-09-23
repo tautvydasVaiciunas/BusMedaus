@@ -17,29 +17,37 @@ interface MediaResponse {
   taskId?: string;
   harvestId?: string;
   auditEventId?: string;
-  capturedAt?: Date | null;
+  capturedAt?: string | null;
   hive: { id: string; name: string };
   uploader: { id: string; email: string };
-  createdAt: Date;
-  updatedAt: Date;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 function mapMedia(item: MediaItem): MediaResponse {
+  const metadata = item.metadata ?? null;
+  const metadataTags =
+    metadata && typeof metadata === 'object' && 'tags' in metadata ? (metadata as { tags?: unknown }).tags : undefined;
+  const tags = Array.isArray(metadataTags)
+    ? (metadataTags as unknown[]).filter((tag): tag is string => typeof tag === 'string')
+    : [];
   return {
     id: item.id,
     url: item.url,
     mimeType: item.mimeType,
     description: item.description,
-    metadata: item.metadata ?? null,
+    metadata,
     inspectionId: item.inspectionId ?? undefined,
     taskId: item.taskId ?? undefined,
     harvestId: item.harvestId ?? undefined,
     auditEventId: item.auditEventId ?? undefined,
-    capturedAt: item.capturedAt ?? null,
+    capturedAt: item.capturedAt ? item.capturedAt.toISOString() : null,
     hive: { id: item.hive.id, name: item.hive.name },
     uploader: { id: item.uploader.id, email: item.uploader.email },
-    createdAt: item.createdAt,
-    updatedAt: item.updatedAt
+    tags,
+    createdAt: item.createdAt.toISOString(),
+    updatedAt: item.updatedAt.toISOString()
   };
 }
 
@@ -54,6 +62,12 @@ export class MediaController {
     @Param('hiveId') hiveId: string
   ): Promise<MediaResponse[]> {
     const items = await this.mediaService.listForHive(user, hiveId);
+    return items.map(mapMedia);
+  }
+
+  @Get('media')
+  async listAccessible(@CurrentUser() user: AuthenticatedUser): Promise<MediaResponse[]> {
+    const items = await this.mediaService.listAccessible(user);
     return items.map(mapMedia);
   }
 

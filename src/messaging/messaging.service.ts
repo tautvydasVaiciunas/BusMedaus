@@ -25,6 +25,27 @@ export class MessagingService {
     private readonly dataSource: DataSource
   ) {}
 
+  async listRecentMessages(user: AuthenticatedUser): Promise<Comment[]> {
+    const includeAll = user.roles.includes('admin');
+    const comments = await this.commentsRepository.findRecentForAccessibleTasks(user.userId, includeAll);
+    const seenTasks = new Set<string>();
+    const feed: Comment[] = [];
+
+    for (const comment of comments) {
+      const taskId = comment.task?.id;
+      if (!taskId || seenTasks.has(taskId)) {
+        continue;
+      }
+      seenTasks.add(taskId);
+      feed.push(comment);
+      if (feed.length >= 20) {
+        break;
+      }
+    }
+
+    return feed;
+  }
+
   async getCommentsForTask(user: AuthenticatedUser, taskId: string): Promise<Comment[]> {
     const task = await this.tasksRepository.findById(taskId);
     if (!task) {

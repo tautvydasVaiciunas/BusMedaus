@@ -29,6 +29,13 @@ export class TasksService {
     private readonly dataSource: DataSource
   ) {}
 
+  async listAccessibleTasks(user: AuthenticatedUser): Promise<Task[]> {
+    if (user.roles.includes('admin')) {
+      return this.tasksRepository.findAllWithRelations();
+    }
+    return this.tasksRepository.findAccessible(user.userId);
+  }
+
   async listTasksForHive(user: AuthenticatedUser, hiveId: string): Promise<Task[]> {
     const hive = await this.hivesRepository.findById(hiveId);
     if (!hive) {

@@ -4,16 +4,82 @@ import { Card } from "../../components/ui/Card";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import type { MediaItem } from "../../types";
 
+type MediaApiItem = {
+  id: string;
+  url: string;
+  mimeType: string;
+  description?: string;
+  metadata?: Record<string, unknown> | null;
+  tags?: string[];
+  capturedAt?: string | null;
+  hive: { id: string; name: string };
+  uploader: {
+    id: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    displayName?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+};
+
+const formatAuthor = (uploader: MediaApiItem["uploader"]): string => {
+  if (uploader.displayName && uploader.displayName.trim()) {
+    return uploader.displayName;
+  }
+  const parts = [uploader.firstName, uploader.lastName].filter((part) => part && part.trim());
+  if (parts.length) {
+    return parts.join(" ");
+  }
+  return uploader.email;
+};
+
+const formatCapturedAt = (value?: string | null): string => {
+  if (!value) {
+    return "Nenurodytas laikas";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Nenurodytas laikas";
+  }
+  return new Intl.DateTimeFormat("lt-LT", { dateStyle: "medium", timeStyle: "short" }).format(date);
+};
+
+const extractTags = (item: MediaApiItem): string[] => {
+  if (Array.isArray(item.tags) && item.tags.length) {
+    return item.tags;
+  }
+  const metadataTags =
+    item.metadata && typeof item.metadata === "object" && "tags" in item.metadata
+      ? (item.metadata as { tags?: unknown }).tags
+      : undefined;
+  if (Array.isArray(metadataTags)) {
+    return metadataTags.filter((tag): tag is string => typeof tag === "string");
+  }
+  return [];
+};
+
+const mapMediaResponse = (item: MediaApiItem): MediaItem => ({
+  id: item.id,
+  hiveId: item.hive.id,
+  capturedAt: formatCapturedAt(item.capturedAt ?? null),
+  author: formatAuthor(item.uploader),
+  url: item.url,
+  tags: extractTags(item)
+});
+
 const MediaPage = () => {
   const {
     data: mediaItems,
     isLoading,
     isError,
     error
-  } = useQuery<MediaItem[]>({
+  } = useQuery<MediaApiItem[], Error, MediaItem[]>({
     queryKey: ["media"],
-    queryFn: () => apiClient.get<MediaItem[]>("/media"),
-    staleTime: 45_000
+    queryFn: () => apiClient.get<MediaApiItem[]>("/media"),
+    staleTime: 45_000,
+    select: (items) => items.map(mapMediaResponse)
   });
 
   const items = mediaItems ?? [];
@@ -50,7 +116,11 @@ const MediaPage = () => {
                     key={item.id}
                     title={`Avilys ${item.hiveId}`}
                     subtitle={`${item.capturedAt} • ${item.author}`}
-                    accent={<StatusBadge tone="neutral">{item.tags.join(", ")}</StatusBadge>}
+                    accent={
+                      <StatusBadge tone="neutral">
+                        {item.tags.length ? item.tags.join(", ") : "Žymų nėra"}
+                      </StatusBadge>
+                    }
                   >
                     <div className="mt-4 overflow-hidden rounded-xl">
                       <img src={item.url} alt={item.id} className="h-52 w-full object-cover" />

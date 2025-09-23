@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import type { MailDataRequired, MailService } from '@sendgrid/mail';
-import type { Messaging, SendEachForMulticastResponse } from 'firebase-admin/messaging';
+import type { Messaging } from 'firebase-admin/messaging';
 import { DataSource } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import {
@@ -88,7 +88,7 @@ export class NotificationsService {
             relatedHarvestId: payload.relatedHarvestId,
             auditEventId: payload.auditEventId,
             sentAt: payload.sentAt,
-            readAt: payload.readAt ?? null
+            readAt: payload.readAt ?? undefined
           },
           manager
         );
@@ -330,7 +330,7 @@ export class NotificationsService {
     }
 
     try {
-      const response: SendEachForMulticastResponse = await this.firebaseMessaging.sendEachForMulticast({
+      const response = await this.firebaseMessaging.sendEachForMulticast({
         tokens,
         notification: {
           title: payload.push?.title ?? payload.title,
@@ -339,18 +339,20 @@ export class NotificationsService {
         data: this.buildPushData(notification, payload)
       });
 
+      type ResponseEntry = (typeof response)['responses'][number];
+
       const failureMessages = response.responses
-        .map((result) => (result.success || !result.error ? null : result.error.message))
-        .filter((value): value is string => Boolean(value));
+        .map((result: ResponseEntry) => (result.success || !result.error ? null : result.error.message))
+        .filter((value: string | null): value is string => Boolean(value));
 
       const invalidTokens = response.responses
-        .map((result, index) => {
+        .map((result: ResponseEntry, index: number) => {
           if (result.success || !result.error) {
             return null;
           }
           return this.isInvalidToken(result.error.code) ? tokens[index] : null;
         })
-        .filter((token): token is string => Boolean(token));
+        .filter((token: string | null): token is string => Boolean(token));
 
       if (invalidTokens.length) {
         await this.notificationSubscriptionsRepository.removeByTokens(invalidTokens);

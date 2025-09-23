@@ -5,12 +5,36 @@ import { Card } from "../../components/ui/Card";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import type { Task } from "../../types";
 
+type TaskApiUser = {
+  id: string;
+  email: string;
+  roles: string[];
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+};
+
+type TaskApiItem = {
+  id: string;
+  title: string;
+  dueDate: string | null;
+  status: string;
+  statusLabel?: string;
+  priority: number;
+  priorityLabel?: string;
+  hive: { id: string; name: string };
+  assignedTo?: TaskApiUser | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 const filters = [
   { id: "visi", label: "Visos" },
   { id: "laukiama", label: "Laukiama" },
   { id: "vykdoma", label: "Vykdomos" },
   { id: "užbaigta", label: "Užbaigtos" },
-  { id: "kritinė", label: "Kritinės" }
+  { id: "kritinė", label: "Kritinės" },
+  { id: "atšaukta", label: "Atšauktos" }
 ] as const;
 
 type FilterId = (typeof filters)[number]["id"];
@@ -19,8 +43,84 @@ const statusTone: Record<string, "success" | "warning" | "danger" | "info" | "ne
   laukiama: "warning",
   vykdoma: "info",
   užbaigta: "success",
-  kritinė: "danger"
+  kritinė: "danger",
+  atšaukta: "neutral"
 };
+
+const normalizeKey = (value: string) =>
+  value
+    .toLocaleLowerCase("lt-LT")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+const STATUS_LABEL_MAP: Record<string, Task["status"]> = {
+  laukiama: "laukiama",
+  vykdoma: "vykdoma",
+  uzbaigta: "užbaigta",
+  kritine: "kritinė",
+  atsaukta: "atšaukta"
+};
+
+const PRIORITY_LABEL_MAP: Record<string, Task["priority"]> = {
+  zema: "žema",
+  vidutine: "vidutinė",
+  auksta: "aukšta"
+};
+
+const formatDisplayName = (user?: TaskApiUser | null): string => {
+  if (!user) {
+    return "Nepriskirta";
+  }
+  if (user.displayName && user.displayName.trim()) {
+    return user.displayName;
+  }
+  const parts = [user.firstName, user.lastName].filter((part) => part && part.trim());
+  if (parts.length) {
+    return parts.join(" ");
+  }
+  return user.email;
+};
+
+const formatDueDate = (value: string | null): string => {
+  if (!value) {
+    return "Nenurodytas terminas";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Nenurodytas terminas";
+  }
+  return new Intl.DateTimeFormat("lt-LT", { dateStyle: "medium" }).format(date);
+};
+
+const mapStatus = (item: TaskApiItem): Task["status"] => {
+  const label = normalizeKey((item.statusLabel ?? item.status ?? "").toString());
+  return STATUS_LABEL_MAP[label] ?? "laukiama";
+};
+
+const mapPriority = (item: TaskApiItem): Task["priority"] => {
+  const label = normalizeKey((item.priorityLabel ?? "").toString());
+  if (PRIORITY_LABEL_MAP[label]) {
+    return PRIORITY_LABEL_MAP[label];
+  }
+  if (typeof item.priority === "number") {
+    if (item.priority >= 3) {
+      return "aukšta";
+    }
+    if (item.priority <= 1) {
+      return "žema";
+    }
+  }
+  return "vidutinė";
+};
+
+const mapTaskResponse = (item: TaskApiItem): Task => ({
+  id: item.id,
+  title: item.title,
+  assignedTo: formatDisplayName(item.assignedTo ?? null),
+  dueDate: formatDueDate(item.dueDate ?? null),
+  status: mapStatus(item),
+  priority: mapPriority(item)
+});
 
 const TasksPage = () => {
   const [activeFilter, setActiveFilter] = useState<FilterId>("visi");
@@ -29,10 +129,11 @@ const TasksPage = () => {
     isLoading,
     isError,
     error
-  } = useQuery<Task[]>({
+  } = useQuery<TaskApiItem[], Error, Task[]>({
     queryKey: ["tasks"],
-    queryFn: () => apiClient.get<Task[]>("/tasks"),
-    staleTime: 30_000
+    queryFn: () => apiClient.get<TaskApiItem[]>("/tasks"),
+    staleTime: 30_000,
+    select: (items) => items.map(mapTaskResponse)
   });
 
   const tasks = useMemo(() => {
@@ -101,7 +202,15 @@ const TasksPage = () => {
                     <td className="px-4 py-4 text-slate-300">{task.assignedTo}</td>
                     <td className="px-4 py-4 text-slate-400">{task.dueDate}</td>
                     <td className="px-4 py-4">
-                      <StatusBadge tone={task.priority === "aukšta" ? "danger" : task.priority === "vidutinė" ? "info" : "neutral"}>
+                      <StatusBadge
+                        tone={
+                          task.priority === "aukšta"
+                            ? "danger"
+                            : task.priority === "vidutinė"
+                            ? "info"
+                            : "neutral"
+                        }
+                      >
                         {task.priority.toUpperCase()}
                       </StatusBadge>
                     </td>

@@ -12,6 +12,37 @@ export type DashboardSnapshot = {
   tasks: Task[];
 };
 
+type DashboardApiStat = {
+  id: string;
+  label: string;
+  value: string;
+  trend: string;
+  trendTone: "positive" | "negative" | "neutral" | "info";
+};
+
+type DashboardApiAlert = {
+  id: string;
+  title: string;
+  description: string;
+  type: string;
+  createdAt: string;
+};
+
+type DashboardApiTask = {
+  id: string;
+  title: string;
+  assignedTo: string;
+  dueDate: string;
+  status: string;
+  priority: string;
+};
+
+type DashboardApiSnapshot = {
+  stats: DashboardApiStat[];
+  alerts: DashboardApiAlert[];
+  tasks: DashboardApiTask[];
+};
+
 const statusToneMap: Record<string, "success" | "warning" | "danger" | "info"> = {
   įspėjimas: "warning",
   informacija: "info",
@@ -24,16 +55,88 @@ const trendToneToMetricTone: Record<"positive" | "negative" | "neutral", "positi
   neutral: "neutral"
 };
 
+const normalizeKey = (value: string) =>
+  value
+    .toLocaleLowerCase("lt-LT")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+const TASK_STATUS_MAP: Record<string, Task["status"]> = {
+  laukiama: "laukiama",
+  vykdoma: "vykdoma",
+  uzbaigta: "užbaigta",
+  kritine: "kritinė",
+  atsaukta: "atšaukta"
+};
+
+const TASK_PRIORITY_MAP: Record<string, Task["priority"]> = {
+  zema: "žema",
+  vidutine: "vidutinė",
+  auksta: "aukšta"
+};
+
+const mapTrendTone = (tone: DashboardApiStat["trendTone"]): "positive" | "negative" | "neutral" => {
+  if (tone === "positive" || tone === "negative") {
+    return tone;
+  }
+  return "neutral";
+};
+
+const mapStat = (stat: DashboardApiStat): DashboardStat => ({
+  id: stat.id,
+  label: stat.label.trim(),
+  value: stat.value.trim(),
+  trend: stat.trend.trim(),
+  trendTone: mapTrendTone(stat.trendTone)
+});
+
+const mapAlert = (alert: DashboardApiAlert): Notification => {
+  const normalizedType = alert.type.toLocaleLowerCase("lt-LT");
+  const type: Notification["type"] =
+    normalizedType === "kritinis"
+      ? "kritinis"
+      : normalizedType === "įspėjimas"
+      ? "įspėjimas"
+      : "informacija";
+  return {
+    id: alert.id,
+    title: alert.title,
+    description: alert.description,
+    type,
+    createdAt: alert.createdAt
+  };
+};
+
+const mapTask = (task: DashboardApiTask): Task => {
+  const statusKey = normalizeKey(task.status);
+  const priorityKey = normalizeKey(task.priority);
+  return {
+    id: task.id,
+    title: task.title,
+    assignedTo: task.assignedTo || "Nepriskirta",
+    dueDate: task.dueDate || "Nenurodytas terminas",
+    status: TASK_STATUS_MAP[statusKey] ?? "laukiama",
+    priority: TASK_PRIORITY_MAP[priorityKey] ?? "vidutinė"
+  };
+};
+
+const mapSnapshot = (payload: DashboardApiSnapshot): DashboardSnapshot => ({
+  stats: payload.stats.map(mapStat),
+  alerts: payload.alerts.map(mapAlert),
+  tasks: payload.tasks.map(mapTask)
+});
+
 const DashboardPage = () => {
   const {
     data: snapshot,
     isLoading,
     isError,
     error
-  } = useQuery<DashboardSnapshot>({
+  } = useQuery<DashboardApiSnapshot, Error, DashboardSnapshot>({
     queryKey: ["dashboard", "snapshot"],
-    queryFn: () => apiClient.get<DashboardSnapshot>("/dashboard"),
-    staleTime: 30_000
+    queryFn: () => apiClient.get<DashboardApiSnapshot>("/dashboard"),
+    staleTime: 30_000,
+    select: mapSnapshot
   });
 
   if (isLoading && !snapshot) {
@@ -146,3 +249,4 @@ const DashboardPage = () => {
 };
 
 export default DashboardPage;
+export type { DashboardApiSnapshot };

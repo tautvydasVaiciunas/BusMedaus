@@ -1,6 +1,11 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcryptjs';
+
+jest.mock('bcryptjs', () => ({
+  hash: jest.fn(),
+  compare: jest.fn()
+}));
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { User } from '../user.entity';
@@ -58,7 +63,8 @@ describe('UsersService', () => {
         isActive: true
       } as unknown as User;
 
-      jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashed-password');
+      const hashSpy = bcrypt.hash as jest.MockedFunction<typeof bcrypt.hash>;
+      hashSpy.mockResolvedValue('hashed-password' as never);
       repository.findByEmail.mockResolvedValue(null);
       repository.create.mockReturnValue(createdUser);
       repository.save.mockResolvedValue(createdUser);

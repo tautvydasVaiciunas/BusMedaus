@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import DashboardPage, { type DashboardSnapshot } from "./DashboardPage";
+import DashboardPage, { type DashboardApiSnapshot } from "./DashboardPage";
 import { apiClient } from "../../lib/apiClient";
 
 const createTestQueryClient = () =>
@@ -31,14 +31,14 @@ describe("DashboardPage", () => {
   });
 
   it("renders metrics, tasks and alerts from the API client", async () => {
-    const snapshot: DashboardSnapshot = {
+    const payload: DashboardApiSnapshot = {
       stats: [
         {
           id: "hive-health",
           label: "Sveikų avilių",
           value: "92%",
           trend: "+4.1% nuo praėjusios savaitės",
-          trendTone: "positive"
+          trendTone: "info"
         }
       ],
       alerts: [
@@ -62,7 +62,7 @@ describe("DashboardPage", () => {
       ]
     };
 
-    const spy = vi.spyOn(apiClient, "get").mockResolvedValue(snapshot);
+    const spy = vi.spyOn(apiClient, "get").mockResolvedValue(payload);
 
     renderWithClient(<DashboardPage />);
 

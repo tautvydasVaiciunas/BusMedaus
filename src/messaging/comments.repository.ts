@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { Brackets, EntityManager, Repository } from 'typeorm';
 import { Comment } from './comment.entity';
 
 @Injectable()
@@ -28,5 +28,34 @@ export class CommentsRepository {
       relations: ['author'],
       order: { createdAt: 'ASC' }
     });
+  }
+
+  findRecentForAccessibleTasks(userId: string, includeAll = false): Promise<Comment[]> {
+    const query = this.repository
+      .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.author', 'author')
+      .leftJoinAndSelect('comment.task', 'task')
+      .leftJoinAndSelect('task.hive', 'hive')
+      .leftJoinAndSelect('task.assignedTo', 'assignedTo')
+      .leftJoinAndSelect('task.createdBy', 'createdBy')
+      .leftJoin('hive.owner', 'owner')
+      .leftJoin('hive.members', 'member')
+      .orderBy('comment.createdAt', 'DESC')
+      .distinct(true)
+      .limit(50);
+
+    if (!includeAll) {
+      query.where(
+        new Brackets((qb) => {
+          qb.where('owner.id = :userId', { userId })
+            .orWhere('member.id = :userId', { userId })
+            .orWhere('assignedTo.id = :userId', { userId })
+            .orWhere('createdBy.id = :userId', { userId })
+            .orWhere('author.id = :userId', { userId });
+        })
+      );
+    }
+
+    return query.getMany();
   }
 }

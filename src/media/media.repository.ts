@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { Brackets, EntityManager, Repository } from 'typeorm';
 import { MediaItem } from './media-item.entity';
 
 @Injectable()
@@ -43,6 +43,32 @@ export class MediaRepository {
       relations: ['hive', 'uploader'],
       order: { createdAt: 'DESC' }
     });
+  }
+
+  findAllWithRelations(): Promise<MediaItem[]> {
+    return this.repository.find({
+      relations: ['hive', 'hive.owner', 'hive.members', 'uploader'],
+      order: { createdAt: 'DESC' }
+    });
+  }
+
+  findAccessible(userId: string): Promise<MediaItem[]> {
+    return this.repository
+      .createQueryBuilder('media')
+      .leftJoinAndSelect('media.hive', 'hive')
+      .leftJoinAndSelect('media.uploader', 'uploader')
+      .leftJoinAndSelect('hive.owner', 'owner')
+      .leftJoinAndSelect('hive.members', 'member')
+      .where(
+        new Brackets((qb) => {
+          qb.where('owner.id = :userId', { userId })
+            .orWhere('member.id = :userId', { userId })
+            .orWhere('uploader.id = :userId', { userId });
+        })
+      )
+      .orderBy('media.createdAt', 'DESC')
+      .distinct(true)
+      .getMany();
   }
 
   async remove(item: MediaItem, manager?: EntityManager): Promise<MediaItem> {

@@ -39,6 +39,13 @@ export class MediaService {
     return this.mediaRepository.findByUploader(user.userId);
   }
 
+  async listAccessible(user: AuthenticatedUser): Promise<MediaItem[]> {
+    if (user.roles.includes('admin')) {
+      return this.mediaRepository.findAllWithRelations();
+    }
+    return this.mediaRepository.findAccessible(user.userId);
+  }
+
   async create(user: AuthenticatedUser, dto: CreateMediaItemDto): Promise<MediaItem> {
     const media = await this.dataSource.transaction(async (manager) => {
       const hive = await this.hivesRepository.findById(dto.hiveId, manager);

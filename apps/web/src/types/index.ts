@@ -14,7 +14,7 @@ export type Task = {
   title: string;
   assignedTo: string;
   dueDate: string;
-  status: "laukiama" | "vykdoma" | "užbaigta" | "kritinė";
+  status: "laukiama" | "vykdoma" | "užbaigta" | "kritinė" | "atšaukta";
   priority: "žema" | "vidutinė" | "aukšta";
 };
 

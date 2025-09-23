@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../../lib/apiClient";
 import { Card } from "../../components/ui/Card";
 import { StatusBadge } from "../../components/ui/StatusBadge";
-import type { Message as ApiMessage } from "../../types";
+import type { Message as UiMessage } from "../../types";
 
 const channelLabels: Record<string, string> = {
   programa: "Programėlė",
@@ -11,21 +11,83 @@ const channelLabels: Record<string, string> = {
   sms: "SMS"
 };
 
+type MessageApiItem = {
+  id: string;
+  task: { id: string; title: string; hiveId: string; hiveName: string };
+  author: {
+    id: string;
+    email: string;
+    roles: string[];
+    firstName?: string;
+    lastName?: string;
+    displayName: string;
+  };
+  content: string;
+  createdAt: string;
+  isOwn: boolean;
+};
+
+const formatSender = (author: MessageApiItem["author"]): string => {
+  if (author.displayName && author.displayName.trim()) {
+    return author.displayName;
+  }
+  const parts = [author.firstName, author.lastName].filter((part) => part && part.trim());
+  if (parts.length) {
+    return parts.join(" ");
+  }
+  return author.email;
+};
+
+const formatPreview = (content: string): string => {
+  const normalized = content.trim();
+  return normalized.length > 120 ? `${normalized.slice(0, 117)}...` : normalized;
+};
+
+const formatSentAt = (value: string): string => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "Nežinomas laikas";
+  }
+  return new Intl.DateTimeFormat("lt-LT", { dateStyle: "medium", timeStyle: "short" }).format(date);
+};
+
+const computeUnread = (item: MessageApiItem): boolean => {
+  if (item.isOwn) {
+    return false;
+  }
+  const created = new Date(item.createdAt);
+  if (Number.isNaN(created.getTime())) {
+    return false;
+  }
+  const now = Date.now();
+  return now - created.getTime() < 48 * 60 * 60 * 1000;
+};
+
+const mapMessageResponse = (item: MessageApiItem): UiMessage => ({
+  id: item.id,
+  sender: formatSender(item.author),
+  preview: formatPreview(item.content),
+  sentAt: formatSentAt(item.createdAt),
+  channel: "programa",
+  unread: computeUnread(item)
+});
+
 const MessagingPage = () => {
   const {
     data: messages,
     isLoading,
     isError,
     error
-  } = useQuery<ApiMessage[]>({
+  } = useQuery<MessageApiItem[], Error, UiMessage[]>({
     queryKey: ["messages"],
-    queryFn: () => apiClient.get<ApiMessage[]>("/messages"),
-    staleTime: 10_000
+    queryFn: () => apiClient.get<MessageApiItem[]>("/messages"),
+    staleTime: 10_000,
+    select: (items) => items.map(mapMessageResponse)
   });
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
 
   const conversationItems = messages ?? [];
-  const activeMessage = useMemo<ApiMessage | null>(() => {
+  const activeMessage = useMemo<UiMessage | null>(() => {
     if (!conversationItems.length) return null;
     if (activeMessageId) {
       return conversationItems.find((message) => message.id === activeMessageId) ?? conversationItems[0];
