@@ -67,10 +67,10 @@ export class Notification {
   @Column({ nullable: true })
   auditEventId?: string;
 
-  @Column({ type: 'simple-json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   metadata?: Record<string, unknown> | null;
 
-  @Column({ type: 'simple-json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   deliveryMetadata?: NotificationDeliveryMap | null;
 
   @Column({ type: 'timestamptz', nullable: true })

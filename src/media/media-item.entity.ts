@@ -24,7 +24,7 @@ export class MediaItem {
   @Column({ nullable: true })
   description?: string;
 
-  @Column({ type: 'simple-json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   metadata?: Record<string, unknown> | null;
 
   @ManyToOne(() => Hive, (hive) => hive.mediaItems, { onDelete: 'CASCADE', eager: true })
