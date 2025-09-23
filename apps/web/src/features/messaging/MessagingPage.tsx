@@ -1,9 +1,11 @@
-import { useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../../lib/apiClient";
 import { Card } from "../../components/ui/Card";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import type { Message as UiMessage } from "../../types";
+import { useCommentComposer, useTaskComments } from "./hooks";
+import { computeUnread, formatPreview, formatSender, formatSentAt } from "./utils";
 
 const channelLabels: Record<string, string> = {
   programa: "Programėlė",
@@ -27,49 +29,24 @@ type MessageApiItem = {
   isOwn: boolean;
 };
 
-const formatSender = (author: MessageApiItem["author"]): string => {
-  if (author.displayName && author.displayName.trim()) {
-    return author.displayName;
-  }
-  const parts = [author.firstName, author.lastName].filter((part) => part && part.trim());
-  if (parts.length) {
-    return parts.join(" ");
-  }
-  return author.email;
+type ConversationListItem = UiMessage & {
+  taskId: string;
+  taskTitle: string;
+  hiveId: string;
+  hiveName: string;
 };
 
-const formatPreview = (content: string): string => {
-  const normalized = content.trim();
-  return normalized.length > 120 ? `${normalized.slice(0, 117)}...` : normalized;
-};
-
-const formatSentAt = (value: string): string => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return "Nežinomas laikas";
-  }
-  return new Intl.DateTimeFormat("lt-LT", { dateStyle: "medium", timeStyle: "short" }).format(date);
-};
-
-const computeUnread = (item: MessageApiItem): boolean => {
-  if (item.isOwn) {
-    return false;
-  }
-  const created = new Date(item.createdAt);
-  if (Number.isNaN(created.getTime())) {
-    return false;
-  }
-  const now = Date.now();
-  return now - created.getTime() < 48 * 60 * 60 * 1000;
-};
-
-const mapMessageResponse = (item: MessageApiItem): UiMessage => ({
+const mapMessageResponse = (item: MessageApiItem): ConversationListItem => ({
   id: item.id,
   sender: formatSender(item.author),
   preview: formatPreview(item.content),
   sentAt: formatSentAt(item.createdAt),
   channel: "programa",
-  unread: computeUnread(item)
+  unread: computeUnread(item),
+  taskId: item.task.id,
+  taskTitle: item.task.title,
+  hiveId: item.task.hiveId,
+  hiveName: item.task.hiveName
 });
 
 const MessagingPage = () => {
@@ -78,22 +55,72 @@ const MessagingPage = () => {
     isLoading,
     isError,
     error
-  } = useQuery<MessageApiItem[], Error, UiMessage[]>({
+  } = useQuery<MessageApiItem[], Error, ConversationListItem[]>({
     queryKey: ["messages"],
     queryFn: () => apiClient.get<MessageApiItem[]>("/messages"),
     staleTime: 10_000,
     select: (items) => items.map(mapMessageResponse)
   });
-  const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
-
   const conversationItems = messages ?? [];
-  const activeMessage = useMemo<UiMessage | null>(() => {
-    if (!conversationItems.length) return null;
-    if (activeMessageId) {
-      return conversationItems.find((message) => message.id === activeMessageId) ?? conversationItems[0];
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+  const [composerValue, setComposerValue] = useState("");
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!conversationItems.length) {
+      setActiveTaskId(null);
+      return;
     }
-    return conversationItems[0];
-  }, [conversationItems, activeMessageId]);
+    if (!activeTaskId || !conversationItems.some((message) => message.taskId === activeTaskId)) {
+      setActiveTaskId(conversationItems[0].taskId);
+    }
+  }, [conversationItems, activeTaskId]);
+
+  const activeMessage = useMemo<ConversationListItem | null>(() => {
+    if (!conversationItems.length) return null;
+    if (!activeTaskId) {
+      return conversationItems[0];
+    }
+    return conversationItems.find((message) => message.taskId === activeTaskId) ?? conversationItems[0];
+  }, [conversationItems, activeTaskId]);
+
+  const {
+    data: thread = [],
+    isLoading: isThreadLoading,
+    isError: isThreadError,
+    error: threadError
+  } = useTaskComments(activeTaskId);
+
+  const { submit: submitComment, isSubmitting, error: composerError, resetError } = useCommentComposer(activeTaskId);
+
+  useEffect(() => {
+    setComposerValue("");
+    setLocalError(null);
+    resetError();
+  }, [activeTaskId, resetError]);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!activeTaskId) {
+      return;
+    }
+
+    const trimmed = composerValue.trim();
+    if (!trimmed) {
+      setLocalError("Įrašykite žinutę prieš pateikdami.");
+      return;
+    }
+
+    try {
+      await submitComment(trimmed);
+      setComposerValue("");
+      setLocalError(null);
+    } catch {
+      // error handled by hook state
+    }
+  };
+
+  const combinedError = localError ?? composerError;
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
@@ -114,9 +141,9 @@ const MessagingPage = () => {
               <button
                 key={message.id}
                 type="button"
-                onClick={() => setActiveMessageId(message.id)}
+                onClick={() => setActiveTaskId(message.taskId)}
                 className={`w-full rounded-xl border border-slate-800 px-3 py-3 text-left transition ${
-                  activeMessage?.id === message.id
+                  activeMessage?.taskId === message.taskId
                     ? "bg-slate-900/80 text-white"
                     : "bg-slate-900/40 text-slate-300 hover:bg-slate-900/60"
                 }`}
@@ -139,30 +166,83 @@ const MessagingPage = () => {
       </Card>
 
       <Card
-        title={activeMessage ? activeMessage.sender : "Žinutės"}
-        subtitle={activeMessage ? channelLabels[activeMessage.channel] : "Pasirinkite žinutę iš sąrašo"}
+        title={activeMessage ? activeMessage.taskTitle : "Žinutės"}
+        subtitle={
+          activeMessage
+            ? `${activeMessage.sender} • ${channelLabels[activeMessage.channel]} • Avilys ${activeMessage.hiveName}`
+            : "Pasirinkite žinutę iš sąrašo"
+        }
         className="lg:col-span-2"
       >
         {activeMessage ? (
-          <div className="space-y-4 text-sm text-slate-300">
+          <div className="flex flex-col gap-6">
             <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-500">
               <span>{activeMessage.sentAt}</span>
               <StatusBadge tone={activeMessage.unread ? "warning" : "info"}>
                 {activeMessage.unread ? "NEPERSKAITYTA" : "ARCHYVUOTA"}
               </StatusBadge>
             </div>
-            <p>
-              Šis skydelis atkuria planuojamą žinučių formatą – antraštė, konteksto žymės, susiję aviliai ir įtrauktos
-              nuotraukos. Integravus backend'ą, čia bus rodomas visas pokalbio siūlas su atsakymais ir failų istorija.
-            </p>
-            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-xs text-slate-400">
-              <p className="font-semibold text-slate-200">Numatyti laukai:</p>
-              <ul className="mt-2 list-disc space-y-1 pl-4">
-                <li>Susieti aviliai (B-204, B-176)</li>
-                <li>Veiksmų žymos ("jutiklis", "profilaktika")</li>
-                <li>Failų peržiūra ir komentarai realiu laiku</li>
-              </ul>
+
+            <div className="space-y-4">
+              {isThreadLoading ? (
+                <p className="text-sm text-slate-400">Įkeliame pokalbio istoriją...</p>
+              ) : isThreadError ? (
+                <p className="rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-200">
+                  {threadError instanceof Error ? threadError.message : "Nepavyko įkelti pokalbio."}
+                </p>
+              ) : thread.length ? (
+                thread.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 shadow-inner shadow-black/10"
+                  >
+                    <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-500">
+                      <span className="font-medium text-slate-300">{entry.authorLabel}</span>
+                      <span>{entry.formattedCreatedAt}</span>
+                    </div>
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-200">{entry.content}</p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-slate-400">Dar nėra komentarų šiame pokalbyje.</p>
+              )}
             </div>
+
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <label className="block text-sm font-medium text-slate-200" htmlFor="comment-content">
+                Nauja žinutė
+              </label>
+              <textarea
+                id="comment-content"
+                value={composerValue}
+                onChange={(event) => {
+                  setComposerValue(event.target.value);
+                  if (localError) {
+                    setLocalError(null);
+                  }
+                  if (composerError) {
+                    resetError();
+                  }
+                }}
+                rows={4}
+                placeholder="Rašykite komentarą apie užduoties eigą..."
+                className="w-full rounded-xl border border-slate-800 bg-slate-900/40 p-3 text-sm text-slate-200 placeholder:text-slate-500 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              />
+              {combinedError ? (
+                <p className="text-sm text-rose-300" role="alert">
+                  {combinedError}
+                </p>
+              ) : null}
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:bg-amber-500/60"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Siunčiame..." : "Siųsti"}
+                </button>
+              </div>
+            </form>
           </div>
         ) : (
           <p className="text-sm text-slate-400">Pasirinkite žinutę kairėje, kad peržiūrėtumėte detales.</p>
