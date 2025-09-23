@@ -45,7 +45,7 @@ const firebaseMessagingProvider = {
     }
 
     try {
-      // Convert escaped '\n' sequences into actual line breaks for Firebase credentials.
+      // Convert escaped '\n' sequences (single backslash) into actual line breaks for Firebase credentials.
       const sanitizedPrivateKey = privateKey.replace(/\\n/g, '\n');
       const existing = getApps().find((app) => app.name === 'busmedaus-notifications');
       const app =
