@@ -11,7 +11,7 @@ export class NotificationTransports1700000000100 implements MigrationInterface {
         "token" character varying(255) NOT NULL,
         "platform" character varying(50) NOT NULL DEFAULT 'web',
         "metadata" jsonb,
-        "lastUsedAt" TIMESTAMP,
+        "lastUsedAt" TIMESTAMP WITH TIME ZONE,
         "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
         "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
         CONSTRAINT "UQ_notification_subscriptions_token_user" UNIQUE ("token", "userId"),

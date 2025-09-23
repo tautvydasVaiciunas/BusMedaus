@@ -36,8 +36,12 @@ export class AlignTypeormSchema1700000000000 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "notifications" ADD COLUMN IF NOT EXISTS "relatedHarvestId" text`);
     await queryRunner.query(`ALTER TABLE "notifications" ADD COLUMN IF NOT EXISTS "auditEventId" text`);
     await queryRunner.query(`ALTER TABLE "notifications" ADD COLUMN IF NOT EXISTS "metadata" jsonb`);
-    await queryRunner.query(`ALTER TABLE "notifications" ADD COLUMN IF NOT EXISTS "sentAt" TIMESTAMP`);
-    await queryRunner.query(`ALTER TABLE "notifications" ADD COLUMN IF NOT EXISTS "readAt" TIMESTAMP`);
+    await queryRunner.query(
+      `ALTER TABLE "notifications" ADD COLUMN IF NOT EXISTS "sentAt" TIMESTAMP WITH TIME ZONE`
+    );
+    await queryRunner.query(
+      `ALTER TABLE "notifications" ADD COLUMN IF NOT EXISTS "readAt" TIMESTAMP WITH TIME ZONE`
+    );
 
     await queryRunner.query(`ALTER TABLE "media_items" DROP COLUMN IF EXISTS "type"`);
     await queryRunner.query(`ALTER TABLE "media_items" DROP COLUMN IF EXISTS "metadata"`);
@@ -47,7 +51,9 @@ export class AlignTypeormSchema1700000000000 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "media_items" ADD COLUMN IF NOT EXISTS "taskId" text`);
     await queryRunner.query(`ALTER TABLE "media_items" ADD COLUMN IF NOT EXISTS "harvestId" text`);
     await queryRunner.query(`ALTER TABLE "media_items" ADD COLUMN IF NOT EXISTS "auditEventId" text`);
-    await queryRunner.query(`ALTER TABLE "media_items" ADD COLUMN IF NOT EXISTS "capturedAt" TIMESTAMP`);
+    await queryRunner.query(
+      `ALTER TABLE "media_items" ADD COLUMN IF NOT EXISTS "capturedAt" TIMESTAMP WITH TIME ZONE`
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

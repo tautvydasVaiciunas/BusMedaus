@@ -21,7 +21,7 @@ export class RefreshToken {
   @Column()
   tokenHash!: string;
 
-  @Column({ type: 'datetime' })
+  @Column({ type: 'timestamptz' })
   expiresAt!: Date;
 
   @Column({ default: false })
