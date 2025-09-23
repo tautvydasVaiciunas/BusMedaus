@@ -1,8 +1,8 @@
-import { useCallback } from "react";
 import { Card } from "../../components/ui/Card";
 import { StatusBadge } from "../../components/ui/StatusBadge";
-import { useMockQuery } from "../../hooks/useMockQuery";
-import { mockService } from "../../mocks/mockService";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "../../lib/apiClient";
+import type { AuditLogEntry } from "../../types";
 
 const severityTone: Record<string, "success" | "warning" | "danger" | "info"> = {
   žemas: "info",
@@ -11,7 +11,18 @@ const severityTone: Record<string, "success" | "warning" | "danger" | "info"> = 
 };
 
 const AuditLogPage = () => {
-  const query = useMockQuery("audit", useCallback(() => mockService.getAuditLog(), []));
+  const {
+    data: entries,
+    isLoading,
+    isError,
+    error
+  } = useQuery<AuditLogEntry[]>({
+    queryKey: ["audit", "log"],
+    queryFn: () => apiClient.get<AuditLogEntry[]>("/audit"),
+    staleTime: 45_000
+  });
+
+  const auditEntries = entries ?? [];
 
   return (
     <div className="space-y-6">
@@ -41,14 +52,20 @@ const AuditLogPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 bg-slate-900/40 text-slate-200">
-              {query.isLoading ? (
+              {isLoading ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
                     Kraunama...
                   </td>
                 </tr>
-              ) : (
-                (query.data ?? []).map((entry) => (
+              ) : isError ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-rose-300">
+                    {error instanceof Error ? error.message : "Nepavyko įkelti audito žurnalo."}
+                  </td>
+                </tr>
+              ) : auditEntries.length ? (
+                auditEntries.map((entry) => (
                   <tr key={entry.id}>
                     <td className="px-4 py-4 font-semibold text-slate-100">{entry.actor}</td>
                     <td className="px-4 py-4 text-slate-300">{entry.action}</td>
@@ -61,6 +78,12 @@ const AuditLogPage = () => {
                     <td className="px-4 py-4 text-slate-400">{entry.createdAt}</td>
                   </tr>
                 ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
+                    Audito įrašų nėra.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>

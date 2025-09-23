@@ -1,8 +1,8 @@
-import { useCallback } from "react";
 import { Card } from "../../components/ui/Card";
 import { StatusBadge } from "../../components/ui/StatusBadge";
-import { useMockQuery } from "../../hooks/useMockQuery";
-import { mockService } from "../../mocks/mockService";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "../../lib/apiClient";
+import type { Hive } from "../../types";
 
 const queenToneMap: Record<string, "success" | "warning" | "danger" | "info"> = {
   aktyvi: "success",
@@ -11,11 +11,27 @@ const queenToneMap: Record<string, "success" | "warning" | "danger" | "info"> = 
 };
 
 const HivesPage = () => {
-  const query = useMockQuery("hives", useCallback(() => mockService.getHives(), []));
+  const {
+    data: hives,
+    isLoading,
+    isError,
+    error
+  } = useQuery<Hive[]>({
+    queryKey: ["hives"],
+    queryFn: () => apiClient.get<Hive[]>("/hives"),
+    staleTime: 60_000
+  });
 
-  if (query.isLoading || !query.data) {
+  if (isLoading && !hives) {
     return <Card title="Aviliai">Kraunama...</Card>;
   }
+
+  if (isError) {
+    const message = error instanceof Error ? error.message : "Nepavyko gauti avilių duomenų.";
+    return <Card title="Aviliai">{message}</Card>;
+  }
+
+  const hiveList = hives ?? [];
 
   return (
     <div className="space-y-6">
@@ -30,7 +46,7 @@ const HivesPage = () => {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {query.data.map((hive) => (
+        {hiveList.map((hive) => (
           <Card
             key={hive.id}
             title={`${hive.name}`}
