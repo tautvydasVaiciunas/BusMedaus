@@ -18,12 +18,32 @@ interface JwtPayload {
   type: 'access' | 'refresh';
 }
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+}
+
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
   expiresIn: number;
   refreshExpiresAt: Date;
+  user: AuthUser;
 }
+
+const mapAuthUser = (user: User): AuthUser => {
+  const primaryRole = user.roles?.[0] ?? 'user';
+  const name = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: name || primaryRole,
+    role: primaryRole
+  };
+};
 
 @Injectable()
 export class AuthService {
@@ -38,14 +58,17 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthTokens> {
-    const { accessToken, refreshToken, refreshExpiresAt } = await this.dataSource.transaction(async (manager) => {
-      const user = await this.usersService.createUser(dto, manager);
-      return this.generateTokens(user, manager);
-    });
+    const { user, accessToken, refreshToken, refreshExpiresAt } = await this.dataSource.transaction(
+      async (manager) => {
+        const user = await this.usersService.createUser(dto, manager);
+        const tokens = await this.generateTokens(user, manager);
+        return { user, ...tokens };
+      }
+    );
 
     const decoded = jwt.decode(accessToken) as jwt.JwtPayload | null;
     const expiresIn = decoded?.exp ? decoded.exp * 1000 - Date.now() : 0;
-    return { accessToken, refreshToken, expiresIn, refreshExpiresAt };
+    return { accessToken, refreshToken, expiresIn, refreshExpiresAt, user: mapAuthUser(user) };
   }
 
   async login(dto: LoginDto): Promise<AuthTokens> {
@@ -62,7 +85,7 @@ export class AuthService {
     const { accessToken, refreshToken, refreshExpiresAt } = await this.generateTokens(user);
     const decoded = jwt.decode(accessToken) as jwt.JwtPayload | null;
     const expiresIn = decoded?.exp ? decoded.exp * 1000 - Date.now() : 0;
-    return { accessToken, refreshToken, expiresIn, refreshExpiresAt };
+    return { accessToken, refreshToken, expiresIn, refreshExpiresAt, user: mapAuthUser(user) };
   }
 
   async logout(refreshToken: string): Promise<void> {
@@ -119,7 +142,13 @@ export class AuthService {
     const { accessToken, refreshToken: newRefreshToken, refreshExpiresAt } = await this.generateTokens(user);
     const decoded = jwt.decode(accessToken) as jwt.JwtPayload | null;
     const expiresIn = decoded?.exp ? decoded.exp * 1000 - Date.now() : 0;
-    return { accessToken, refreshToken: newRefreshToken, expiresIn, refreshExpiresAt };
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
+      expiresIn,
+      refreshExpiresAt,
+      user: mapAuthUser(user)
+    };
   }
 
   async verifyAccessToken(token: string): Promise<JwtPayload> {
