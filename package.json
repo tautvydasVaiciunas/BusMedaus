@@ -6,6 +6,7 @@
   "scripts": {
     "build": "npm run build:web && tsc -p tsconfig.json",
     "build:web": "npm --prefix apps/web run build",
+    "postinstall": "npm install --prefix apps/web --legacy-peer-deps",
     "dev:web": "npm --prefix apps/web run dev",
     "lint": "eslint .",
     "lint:web": "npm --prefix apps/web run lint",

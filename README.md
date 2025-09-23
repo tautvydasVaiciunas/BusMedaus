@@ -18,6 +18,9 @@ npm run db:seed # optional
 node dist/main.js
 ```
 
+The root `npm install` command runs a `postinstall` hook that installs the React console dependencies under `apps/web`, ensuring
+`npm run build` has everything it needs to produce both the backend and front-end bundles.
+
 The backend requires access to PostgreSQL. Connection details are read from the `DB_*` environment variables in `src/app.module.ts`.
 By default the service expects a database named `busmedaus` available on `localhost:5432` with the `postgres` user. Adjust the
 variables above to match your environment before running the migrations or starting the API. Once running, the server listens on
