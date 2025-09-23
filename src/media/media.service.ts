@@ -62,7 +62,7 @@ export class MediaService {
           url: dto.url,
           mimeType: dto.mimeType,
           description: dto.description,
-          metadata: dto.metadata ?? null,
+          metadata: dto.metadata,
           inspectionId: dto.inspectionId,
           taskId: dto.taskId,
           harvestId: dto.harvestId,

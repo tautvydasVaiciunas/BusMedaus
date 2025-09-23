@@ -130,7 +130,9 @@ export class NotificationsService {
       if (subscription) {
         subscription.user = user;
         subscription.platform = payload.platform ?? subscription.platform;
-        subscription.metadata = payload.metadata ?? subscription.metadata ?? null;
+        if (payload.metadata !== undefined) {
+          subscription.metadata = payload.metadata;
+        }
         subscription.lastUsedAt = now;
       } else {
         subscription = this.notificationSubscriptionsRepository.create(
@@ -138,7 +140,7 @@ export class NotificationsService {
             user,
             token: payload.token,
             platform: payload.platform ?? 'web',
-            metadata: payload.metadata ?? null,
+            metadata: payload.metadata,
             lastUsedAt: now
           },
           manager

@@ -26,7 +26,7 @@ export class NotificationSubscription {
   @Column({ length: 50, default: 'web' })
   platform!: string;
 
-  @Column({ type: 'simple-json', nullable: true })
+  @Column({ type: 'jsonb', nullable: true })
   metadata?: Record<string, unknown> | null;
 
   @Column({ type: 'timestamptz', nullable: true })
