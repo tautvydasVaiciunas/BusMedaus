@@ -110,7 +110,8 @@ const computeExpiration = (payload: TokenResponse, fallback?: Session) => {
   }
 
   if (typeof payload.expiresIn === "number") {
-    return Date.now() + payload.expiresIn * 1000;
+    const duration = Math.max(payload.expiresIn, 0);
+    return Date.now() + duration;
   }
 
   return fallback?.expiresAt ?? Date.now() + 15 * 60 * 1000;
