@@ -72,5 +72,6 @@ line-two`;
     expect(credentials.privateKey).toBe(expectedSanitizedKey);
     expect(credentials.privateKey).toContain('\n');
     expect(credentials.privateKey).not.toContain('\\n');
+    expect(credentials.privateKey.split('\n')).toEqual(['line-one', 'line-two']);
   });
 });
