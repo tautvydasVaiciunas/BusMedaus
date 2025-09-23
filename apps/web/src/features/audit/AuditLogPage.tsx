@@ -2,13 +2,19 @@ import { Card } from "../../components/ui/Card";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "../../lib/apiClient";
-import type { AuditLogEntry } from "../../types";
+import { mapAuditLogResponse } from "./auditMapper";
+import type { AuditLogApiEntry, AuditLogEntry, AuditSeverity } from "../../types";
 
-const severityTone: Record<string, "success" | "warning" | "danger" | "info"> = {
+const severityTone: Record<AuditSeverity, "success" | "warning" | "danger" | "info"> = {
   žemas: "info",
   vidutinis: "warning",
   aukštas: "danger"
 };
+
+const AUDIT_QUERY_LIMIT = 100;
+const ACTOR_FALLBACK = "Nežinomas";
+const ENTITY_FALLBACK = "Nenurodytas objektas";
+const SEVERITY_FALLBACK = "Nenurodyta";
 
 const AuditLogPage = () => {
   const {
@@ -17,8 +23,13 @@ const AuditLogPage = () => {
     isError,
     error
   } = useQuery<AuditLogEntry[]>({
-    queryKey: ["audit", "log"],
-    queryFn: () => apiClient.get<AuditLogEntry[]>("/audit"),
+    queryKey: ["audit", "log", AUDIT_QUERY_LIMIT],
+    queryFn: async () => {
+      const payload = await apiClient.get<AuditLogApiEntry[]>("/admin/audit", {
+        query: { limit: AUDIT_QUERY_LIMIT }
+      });
+      return mapAuditLogResponse(payload);
+    },
     staleTime: 45_000
   });
 
@@ -67,13 +78,17 @@ const AuditLogPage = () => {
               ) : auditEntries.length ? (
                 auditEntries.map((entry) => (
                   <tr key={entry.id}>
-                    <td className="px-4 py-4 font-semibold text-slate-100">{entry.actor}</td>
+                    <td className="px-4 py-4 font-semibold text-slate-100">{entry.actor ?? ACTOR_FALLBACK}</td>
                     <td className="px-4 py-4 text-slate-300">{entry.action}</td>
-                    <td className="px-4 py-4 text-slate-300">{entry.entity}</td>
+                    <td className="px-4 py-4 text-slate-300">{entry.entity ?? ENTITY_FALLBACK}</td>
                     <td className="px-4 py-4">
-                      <StatusBadge tone={severityTone[entry.severity] ?? "neutral"}>
-                        {entry.severity.toUpperCase()}
-                      </StatusBadge>
+                      {entry.severity ? (
+                        <StatusBadge tone={severityTone[entry.severity] ?? "neutral"}>
+                          {entry.severity.toUpperCase()}
+                        </StatusBadge>
+                      ) : (
+                        <span className="text-xs font-medium text-slate-400">{SEVERITY_FALLBACK}</span>
+                      )}
                     </td>
                     <td className="px-4 py-4 text-slate-400">{entry.createdAt}</td>
                   </tr>

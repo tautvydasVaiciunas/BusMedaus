@@ -109,12 +109,22 @@ export type TeamMember = {
   avatarColor: string;
 };
 
+export type AuditSeverity = "žemas" | "vidutinis" | "aukštas";
+
+export type AuditLogApiEntry = {
+  id: string;
+  userId: string | null;
+  action: string;
+  details: Record<string, unknown> | null;
+  createdAt: string;
+};
+
 export type AuditLogEntry = {
   id: string;
-  actor: string;
+  actor: string | null;
   action: string;
-  entity: string;
-  severity: "žemas" | "vidutinis" | "aukštas";
+  entity: string | null;
+  severity: AuditSeverity | null;
   createdAt: string;
 };
 
