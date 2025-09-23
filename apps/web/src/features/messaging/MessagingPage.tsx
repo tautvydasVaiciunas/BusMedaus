@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useState } from "react";
-import { useMockQuery } from "../../hooks/useMockQuery";
-import { mockService } from "../../mocks/mockService";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "../../lib/apiClient";
 import { Card } from "../../components/ui/Card";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import type { Message as ApiMessage } from "../../types";
 
 const channelLabels: Record<string, string> = {
   programa: "Programėlė",
@@ -10,20 +11,27 @@ const channelLabels: Record<string, string> = {
   sms: "SMS"
 };
 
-type Message = Awaited<ReturnType<typeof mockService.getMessages>>[number];
-
 const MessagingPage = () => {
-  const query = useMockQuery("messages", useCallback(() => mockService.getMessages(), []));
+  const {
+    data: messages,
+    isLoading,
+    isError,
+    error
+  } = useQuery<ApiMessage[]>({
+    queryKey: ["messages"],
+    queryFn: () => apiClient.get<ApiMessage[]>("/messages"),
+    staleTime: 10_000
+  });
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
 
-  const messages = query.data ?? [];
-  const activeMessage = useMemo<Message | null>(() => {
-    if (!messages.length) return null;
+  const conversationItems = messages ?? [];
+  const activeMessage = useMemo<ApiMessage | null>(() => {
+    if (!conversationItems.length) return null;
     if (activeMessageId) {
-      return messages.find((message) => message.id === activeMessageId) ?? messages[0];
+      return conversationItems.find((message) => message.id === activeMessageId) ?? conversationItems[0];
     }
-    return messages[0];
-  }, [messages, activeMessageId]);
+    return conversationItems[0];
+  }, [conversationItems, activeMessageId]);
 
   return (
     <div className="grid gap-6 lg:grid-cols-3">
@@ -33,10 +41,14 @@ const MessagingPage = () => {
         className="lg:col-span-1"
       >
         <div className="space-y-3">
-          {query.isLoading ? (
+          {isLoading ? (
             <p className="text-sm text-slate-400">Įkeliame paskutinius pokalbius...</p>
-          ) : (
-            messages.map((message) => (
+          ) : isError ? (
+            <p className="rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-200">
+              {error instanceof Error ? error.message : "Nepavyko įkelti žinučių."}
+            </p>
+          ) : conversationItems.length ? (
+            conversationItems.map((message) => (
               <button
                 key={message.id}
                 type="button"
@@ -58,6 +70,8 @@ const MessagingPage = () => {
                 </div>
               </button>
             ))
+          ) : (
+            <p className="text-sm text-slate-400">Žinučių istorija tuščia.</p>
           )}
         </div>
       </Card>

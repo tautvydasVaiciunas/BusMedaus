@@ -1,12 +1,16 @@
-import { useCallback } from "react";
 import { MetricTile } from "../../components/ui/MetricTile";
 import { Card } from "../../components/ui/Card";
 import { StatusBadge } from "../../components/ui/StatusBadge";
-import { useMockQuery } from "../../hooks/useMockQuery";
-import { mockService } from "../../mocks/mockService";
 import { BellAlertIcon, ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "../../lib/apiClient";
+import type { DashboardStat, Notification, Task } from "../../types";
 
-export type DashboardSnapshot = Awaited<ReturnType<typeof mockService.getDashboard>>;
+export type DashboardSnapshot = {
+  stats: DashboardStat[];
+  alerts: Notification[];
+  tasks: Task[];
+};
 
 const statusToneMap: Record<string, "success" | "warning" | "danger" | "info"> = {
   įspėjimas: "warning",
@@ -21,19 +25,34 @@ const trendToneToMetricTone: Record<"positive" | "negative" | "neutral", "positi
 };
 
 const DashboardPage = () => {
-  const query = useMockQuery<DashboardSnapshot>(
-    "dashboard",
-    useCallback(() => mockService.getDashboard(), [])
-  );
+  const {
+    data: snapshot,
+    isLoading,
+    isError,
+    error
+  } = useQuery<DashboardSnapshot>({
+    queryKey: ["dashboard", "snapshot"],
+    queryFn: () => apiClient.get<DashboardSnapshot>("/dashboard"),
+    staleTime: 30_000
+  });
 
-  if (query.isLoading || !query.data) {
+  if (isLoading && !snapshot) {
     return <Card title="Duomenys" subtitle="Įkeliame naujausią suvestinę">Kraunama...</Card>;
+  }
+
+  if (isError || !snapshot) {
+    const message = error instanceof Error ? error.message : "Nepavyko įkelti suvestinės.";
+    return (
+      <Card title="Duomenys" subtitle="Įkeliame naujausią suvestinę">
+        <p className="text-sm text-rose-300">{message}</p>
+      </Card>
+    );
   }
 
   return (
     <div className="space-y-8">
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {query.data.stats.map((stat) => (
+        {snapshot.stats.map((stat) => (
           <MetricTile
             key={stat.id}
             label={stat.label}
@@ -51,7 +70,7 @@ const DashboardPage = () => {
           accent={<span className="text-xs text-slate-400">Atnaujinta prieš 5 minutes</span>}
         >
           <ul className="space-y-4">
-            {query.data.tasks.map((task) => (
+            {snapshot.tasks.map((task) => (
               <li key={task.id} className="flex items-start justify-between gap-3 rounded-xl bg-slate-900/60 p-3">
                 <div>
                   <p className="text-sm font-semibold text-slate-100">{task.title}</p>
@@ -73,7 +92,7 @@ const DashboardPage = () => {
           accent={<BellAlertIcon className="h-6 w-6 text-amber-300" />}
         >
           <ul className="space-y-4">
-            {query.data.alerts.map((alert) => (
+            {snapshot.alerts.map((alert) => (
               <li key={alert.id} className="flex items-start gap-3 rounded-xl bg-slate-900/60 p-3">
                 <StatusBadge tone={statusToneMap[alert.type] ?? "warning"}>
                   {alert.type.toUpperCase()}

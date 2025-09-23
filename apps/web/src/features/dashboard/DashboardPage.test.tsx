@@ -1,38 +1,75 @@
+import type { ReactElement } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi, afterEach } from "vitest";
-import DashboardPage from "./DashboardPage";
-import { mockService } from "../../mocks/mockService";
-import { dashboardStats, notifications, tasks } from "../../mocks/mockData";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import DashboardPage, { type DashboardSnapshot } from "./DashboardPage";
+import { apiClient } from "../../lib/apiClient";
 
-vi.mock("../../mocks/mockService", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../../mocks/mockService")>();
-  return {
-    ...actual,
-    mockService: {
-      ...actual.mockService,
-      getDashboard: actual.mockService.getDashboard
+const createTestQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false
+      }
     }
-  };
-});
+  });
+
+let testQueryClient: QueryClient | null = null;
+
+const renderWithClient = (ui: ReactElement) => {
+  const client = createTestQueryClient();
+  testQueryClient = client;
+
+  return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+};
 
 describe("DashboardPage", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    testQueryClient?.clear();
+    testQueryClient = null;
   });
 
-  it("renders metrics, tasks and alerts from the mock service", async () => {
-    const spy = vi.spyOn(mockService, "getDashboard").mockResolvedValue({
-      stats: dashboardStats.slice(0, 2),
-      alerts: notifications.slice(0, 1),
-      tasks: tasks.slice(0, 1)
-    });
+  it("renders metrics, tasks and alerts from the API client", async () => {
+    const snapshot: DashboardSnapshot = {
+      stats: [
+        {
+          id: "hive-health",
+          label: "Sveikų avilių",
+          value: "92%",
+          trend: "+4.1% nuo praėjusios savaitės",
+          trendTone: "positive"
+        }
+      ],
+      alerts: [
+        {
+          id: "alert-1",
+          title: "Padidėjusi drėgmė",
+          description: "Viršijo 65% ribą per 4 valandas.",
+          type: "įspėjimas",
+          createdAt: "prieš 9 min."
+        }
+      ],
+      tasks: [
+        {
+          id: "task-1",
+          title: "Avilio patikra",
+          assignedTo: "Rokas",
+          dueDate: "2025-09-22",
+          status: "laukiama",
+          priority: "aukšta"
+        }
+      ]
+    };
 
-    render(<DashboardPage />);
+    const spy = vi.spyOn(apiClient, "get").mockResolvedValue(snapshot);
+
+    renderWithClient(<DashboardPage />);
 
     await waitFor(() => expect(screen.getByText(/Sveikų avilių/i)).toBeInTheDocument());
     expect(screen.getByText(/92%/)).toBeInTheDocument();
     expect(screen.getByText(/Prioritetinės užduotys/)).toBeInTheDocument();
     expect(screen.getByText(/Aktyvūs įspėjimai/)).toBeInTheDocument();
-    expect(spy).toHaveBeenCalled();
+    expect(spy).toHaveBeenCalledWith("/dashboard");
   });
 });

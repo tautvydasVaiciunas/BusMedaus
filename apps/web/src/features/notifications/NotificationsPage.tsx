@@ -1,9 +1,9 @@
-import { useCallback } from "react";
 import { Card } from "../../components/ui/Card";
 import { StatusBadge } from "../../components/ui/StatusBadge";
-import { useMockQuery } from "../../hooks/useMockQuery";
-import { mockService } from "../../mocks/mockService";
 import { BellAlertIcon } from "@heroicons/react/24/outline";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "../../lib/apiClient";
+import type { Notification } from "../../types";
 
 const toneMap: Record<string, "success" | "warning" | "danger" | "info"> = {
   informacija: "info",
@@ -12,7 +12,18 @@ const toneMap: Record<string, "success" | "warning" | "danger" | "info"> = {
 };
 
 const NotificationsPage = () => {
-  const query = useMockQuery("notifications", useCallback(() => mockService.getNotifications(), []));
+  const {
+    data: notificationsList,
+    isLoading,
+    isError,
+    error
+  } = useQuery<Notification[]>({
+    queryKey: ["notifications"],
+    queryFn: () => apiClient.get<Notification[]>("/notifications"),
+    staleTime: 15_000
+  });
+
+  const items = notificationsList ?? [];
 
   return (
     <div className="space-y-6">
@@ -32,12 +43,16 @@ const NotificationsPage = () => {
         accent={<BellAlertIcon className="h-6 w-6 text-amber-300" />}
       >
         <ul className="space-y-4">
-          {query.isLoading ? (
+          {isLoading ? (
             <li className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-400">
               Kraunama...
             </li>
-          ) : (
-            (query.data ?? []).map((item) => (
+          ) : isError ? (
+            <li className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-4 text-sm text-rose-200">
+              {error instanceof Error ? error.message : "Nepavyko įkelti pranešimų."}
+            </li>
+          ) : items.length ? (
+            items.map((item) => (
               <li key={item.id} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -49,6 +64,10 @@ const NotificationsPage = () => {
                 <p className="mt-3 text-[11px] uppercase tracking-wide text-slate-500">{item.createdAt}</p>
               </li>
             ))
+          ) : (
+            <li className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-400">
+              Šiuo metu naujų pranešimų nėra.
+            </li>
           )}
         </ul>
       </Card>

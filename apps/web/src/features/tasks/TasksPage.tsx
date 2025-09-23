@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useState } from "react";
-import { useMockQuery } from "../../hooks/useMockQuery";
-import { mockService } from "../../mocks/mockService";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "../../lib/apiClient";
 import { Card } from "../../components/ui/Card";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import type { Task } from "../../types";
 
 const filters = [
   { id: "visi", label: "Visos" },
@@ -23,13 +24,22 @@ const statusTone: Record<string, "success" | "warning" | "danger" | "info" | "ne
 
 const TasksPage = () => {
   const [activeFilter, setActiveFilter] = useState<FilterId>("visi");
-  const query = useMockQuery("tasks", useCallback(() => mockService.getTasks(), []));
+  const {
+    data: taskList,
+    isLoading,
+    isError,
+    error
+  } = useQuery<Task[]>({
+    queryKey: ["tasks"],
+    queryFn: () => apiClient.get<Task[]>("/tasks"),
+    staleTime: 30_000
+  });
 
   const tasks = useMemo(() => {
-    if (!query.data) return [];
-    if (activeFilter === "visi") return query.data;
-    return query.data.filter((task) => task.status === activeFilter);
-  }, [activeFilter, query.data]);
+    const items = taskList ?? [];
+    if (activeFilter === "visi") return items;
+    return items.filter((task) => task.status === activeFilter);
+  }, [activeFilter, taskList]);
 
   return (
     <div className="space-y-6">
@@ -72,10 +82,16 @@ const TasksPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 bg-slate-900/40 text-slate-200">
-              {query.isLoading ? (
+              {isLoading ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
                     Kraunama...
+                  </td>
+                </tr>
+              ) : isError ? (
+                <tr>
+                  <td colSpan={5} className="px-4 py-6 text-center text-rose-300">
+                    {error instanceof Error ? error.message : "Nepavyko įkelti užduočių."}
                   </td>
                 </tr>
               ) : tasks.length ? (
