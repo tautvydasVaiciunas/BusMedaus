@@ -1,6 +1,6 @@
 # Naršyklės stumdomi pranešimai
 
-Žiniatinklio konsolė naudoja `usePushSubscription` kabliuką (`apps/web/src/features/notifications/usePushSubscription.ts`) naršyklės pranešimų prenumeratoms registruoti. Kabliukas iškviečia `POST /notifications/subscriptions`, perduoda naršyklės/Firebase sugeneruotą žetoną ir leidžia atšaukti prenumeratą per `DELETE /notifications/subscriptions/:token`. Toliau pateikiami žingsniai, kaip sukonfigūruoti aplinką ir integruoti kabliuką su Firebase Cloud Messaging (FCM) arba kitu Web Push tiekėju.
+Žiniatinklio konsolė naudoja `usePushSubscription` kabliuką (`apps/web/src/features/notifications/usePushSubscription.ts`) naršyklės pranešimų prenumeratoms registruoti. Kabliukas iškviečia `POST /notifications/subscriptions`, perduoda naršyklės/Firebase sugeneruotą žetoną ir leidžia atšaukti prenumeratą per `DELETE /notifications/subscriptions/:id`. API atsakymas į `POST` grąžina tiek prenumeratos identifikatorių, tiek žetoną – kabliukas abu išsaugo (`subscriptionId` ir `token` laukuose), todėl ID galima panaudoti vėlesniam atšaukimui. Toliau pateikiami žingsniai, kaip sukonfigūruoti aplinką ir integruoti kabliuką su Firebase Cloud Messaging (FCM) arba kitu Web Push tiekėju.
 
 ## Paruošimas
 
@@ -17,7 +17,7 @@
 
 ## Žetono gavimas su Firebase
 
-`usePushSubscription` kabliukas sąmoningai neimportuoja Firebase bibliotekų, todėl galima naudoti tiek FCM, tiek kitus Web Push tiekėjus. Toliau pateiktas pavyzdys parodo, kaip apgaubti `getToken` funkciją iš `firebase/messaging` ir perduoti ją kabliukui:
+`usePushSubscription` kabliukas sąmoningai neimportuoja Firebase bibliotekų, todėl galima naudoti tiek FCM, tiek kitus Web Push tiekėjus. Toliau pateiktas pavyzdys parodo, kaip apgaubti `getToken` funkciją iš `firebase/messaging` ir perduoti ją kabliukui. Po sėkmingos registracijos `subscriptionId` lauke rasite identifikatorių, reikalingą `DELETE` užklausoms:
 
 ```ts
 import { useEffect } from "react";
@@ -36,11 +36,11 @@ const firebaseApp = initializeApp({
 const messaging = getMessaging(firebaseApp);
 
 export const BrowserPushSetup = () => {
-  const { register, revoke, status, error, isRegistered } = usePushSubscription();
+  const { register, revoke, status, error, isRegistered, subscriptionId } = usePushSubscription();
 
   useEffect(() => {
     const enablePush = async () => {
-      await register({
+      const tokenResponse = await register({
         getToken: async () =>
           getToken(messaging, {
             vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
@@ -50,6 +50,11 @@ export const BrowserPushSetup = () => {
           sdk: "firebase",
           locale: navigator.language
         }
+      });
+
+      console.debug("Prenumerata užregistruota", {
+        subscriptionId,
+        token: tokenResponse
       });
     };
 
@@ -81,7 +86,7 @@ Kabliukas pats pasirūpina `Notification.requestPermission()` kvietimu (jei API 
 
 ## Prenumeratos atšaukimas
 
-Kai vartotojas atsijungia arba išjungia pranešimus, kvieskite `revoke()` kabliuko metodą. Pagal nutylėjimą jis panaudos paskutinį sėkmingai išsaugotą žetoną, tačiau galima perduoti ir konkrečią reikšmę: `revoke(customToken)`. Funkcija iškvies `DELETE /notifications/subscriptions/:token` ir išvalys lokalią būseną.
+Kai vartotojas atsijungia arba išjungia pranešimus, kvieskite `revoke()` kabliuko metodą. Pagal nutylėjimą jis panaudos paskutinį sėkmingai išsaugotą `subscriptionId`, tačiau galima perduoti ir konkrečią reikšmę: `revoke(customId)`. Funkcija iškvies `DELETE /notifications/subscriptions/:id`, pašalins prenumeratą iš serverio ir išvalys lokalią būseną (`subscriptionId` ir `token`).
 
 ## Derinimas
 
