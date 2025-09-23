@@ -1,12 +1,27 @@
+export type HiveTelemetry = {
+  location?: string | null;
+  queenStatus?: string | null;
+  productivityIndex?: number | null;
+  lastInspectionAt?: string | null;
+  temperature?: number | null;
+  humidity?: number | null;
+};
+
+export type HiveUserSummary = {
+  id: string;
+  email: string;
+  roles: string[];
+};
+
 export type Hive = {
   id: string;
   name: string;
-  queenStatus: "aktyvi" | "per žiemą" | "keisti";
-  productivityIndex: number;
-  lastInspection: string;
-  location: string;
-  temperature: number;
-  humidity: number;
+  description?: string | null;
+  owner: HiveUserSummary;
+  members: HiveUserSummary[];
+  createdAt: string;
+  updatedAt: string;
+  telemetry: HiveTelemetry;
 };
 
 export type Task = {
