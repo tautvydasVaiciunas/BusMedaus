@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import TasksPage from "./TasksPage";
 import { apiClient } from "../../lib/apiClient";
@@ -64,5 +65,77 @@ describe("TasksPage", () => {
     expect(screen.getByText("VIDUTINĖ")).toBeInTheDocument();
     expect(screen.getByText("VYKDOMA")).toBeInTheDocument();
     expect(spy).toHaveBeenCalledWith("/tasks");
+    expect(screen.getByLabelText("Keisti Patikra būseną")).toBeInTheDocument();
+    expect(screen.getByLabelText("Keisti Patikra prioritetą")).toBeInTheDocument();
+  });
+
+  it("updates task status through the API and refreshes the query", async () => {
+    const payload = [
+      {
+        id: "task-1",
+        title: "Patikra",
+        dueDate: null,
+        status: "PENDING",
+        statusLabel: "Laukiama",
+        priority: 2,
+        priorityLabel: "Vidutinė",
+        hive: { id: "hive-1", name: "A1" },
+        assignedTo: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+
+    vi.spyOn(apiClient, "get").mockResolvedValue(payload);
+    const patchSpy = vi.spyOn(apiClient, "patch").mockResolvedValue({});
+
+    renderWithClient(<TasksPage />);
+
+    await waitFor(() => expect(screen.getByText("Patikra")).toBeInTheDocument());
+
+    const client = testQueryClient!;
+    const invalidateSpy = vi.spyOn(client, "invalidateQueries").mockResolvedValue();
+
+    const statusSelect = screen.getByLabelText("Keisti Patikra būseną");
+
+    await userEvent.selectOptions(statusSelect, "COMPLETED");
+
+    await waitFor(() => expect(patchSpy).toHaveBeenCalledWith("/tasks/task-1/status", { status: "COMPLETED" }));
+    await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["tasks"] }));
+  });
+
+  it("updates task priority through the API and refreshes the query", async () => {
+    const payload = [
+      {
+        id: "task-1",
+        title: "Patikra",
+        dueDate: null,
+        status: "IN_PROGRESS",
+        statusLabel: "Vykdoma",
+        priority: 1,
+        priorityLabel: "Žema",
+        hive: { id: "hive-1", name: "A1" },
+        assignedTo: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+    ];
+
+    vi.spyOn(apiClient, "get").mockResolvedValue(payload);
+    const putSpy = vi.spyOn(apiClient, "put").mockResolvedValue({});
+
+    renderWithClient(<TasksPage />);
+
+    await waitFor(() => expect(screen.getByText("Patikra")).toBeInTheDocument());
+
+    const client = testQueryClient!;
+    const invalidateSpy = vi.spyOn(client, "invalidateQueries").mockResolvedValue();
+
+    const prioritySelect = screen.getByLabelText("Keisti Patikra prioritetą");
+
+    await userEvent.selectOptions(prioritySelect, "3");
+
+    await waitFor(() => expect(putSpy).toHaveBeenCalledWith("/tasks/task-1", { priority: 3 }));
+    await waitFor(() => expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ["tasks"] }));
   });
 });

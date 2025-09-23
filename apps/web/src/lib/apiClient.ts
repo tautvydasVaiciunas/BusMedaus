@@ -1,4 +1,4 @@
-type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
+type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
 type QueryValue = string | number | boolean | null | undefined;
 
@@ -168,6 +168,8 @@ export const apiClient = {
     request<T>("POST", path, bodyOptions(options, body)),
   patch: async <T>(path: string, body?: unknown, options?: Omit<RequestOptions, "body">) =>
     request<T>("PATCH", path, bodyOptions(options, body)),
+  put: async <T>(path: string, body?: unknown, options?: Omit<RequestOptions, "body">) =>
+    request<T>("PUT", path, bodyOptions(options, body)),
   delete: async <T>(path: string, options?: RequestOptions) => request<T>("DELETE", path, options)
 };
 

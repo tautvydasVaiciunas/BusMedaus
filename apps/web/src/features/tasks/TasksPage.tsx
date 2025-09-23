@@ -1,9 +1,20 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "../../lib/apiClient";
 import { Card } from "../../components/ui/Card";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import type { Task } from "../../types";
+import {
+  DEFAULT_PRIORITY_OPTION,
+  DEFAULT_STATUS_OPTION,
+  TASK_PRIORITY_OPTIONS,
+  TASK_STATUS_OPTIONS,
+  getPriorityOptionByLabel,
+  getStatusOptionByLabel,
+  getStatusTone,
+  resolveTaskPriority,
+  resolveTaskStatus
+} from "./taskOptions";
 
 type TaskApiUser = {
   id: string;
@@ -39,34 +50,6 @@ const filters = [
 
 type FilterId = (typeof filters)[number]["id"];
 
-const statusTone: Record<string, "success" | "warning" | "danger" | "info" | "neutral"> = {
-  laukiama: "warning",
-  vykdoma: "info",
-  užbaigta: "success",
-  kritinė: "danger",
-  atšaukta: "neutral"
-};
-
-const normalizeKey = (value: string) =>
-  value
-    .toLocaleLowerCase("lt-LT")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-
-const STATUS_LABEL_MAP: Record<string, Task["status"]> = {
-  laukiama: "laukiama",
-  vykdoma: "vykdoma",
-  uzbaigta: "užbaigta",
-  kritine: "kritinė",
-  atsaukta: "atšaukta"
-};
-
-const PRIORITY_LABEL_MAP: Record<string, Task["priority"]> = {
-  zema: "žema",
-  vidutine: "vidutinė",
-  auksta: "aukšta"
-};
-
 const formatDisplayName = (user?: TaskApiUser | null): string => {
   if (!user) {
     return "Nepriskirta";
@@ -92,38 +75,18 @@ const formatDueDate = (value: string | null): string => {
   return new Intl.DateTimeFormat("lt-LT", { dateStyle: "medium" }).format(date);
 };
 
-const mapStatus = (item: TaskApiItem): Task["status"] => {
-  const label = normalizeKey((item.statusLabel ?? item.status ?? "").toString());
-  return STATUS_LABEL_MAP[label] ?? "laukiama";
-};
-
-const mapPriority = (item: TaskApiItem): Task["priority"] => {
-  const label = normalizeKey((item.priorityLabel ?? "").toString());
-  if (PRIORITY_LABEL_MAP[label]) {
-    return PRIORITY_LABEL_MAP[label];
-  }
-  if (typeof item.priority === "number") {
-    if (item.priority >= 3) {
-      return "aukšta";
-    }
-    if (item.priority <= 1) {
-      return "žema";
-    }
-  }
-  return "vidutinė";
-};
-
 const mapTaskResponse = (item: TaskApiItem): Task => ({
   id: item.id,
   title: item.title,
   assignedTo: formatDisplayName(item.assignedTo ?? null),
   dueDate: formatDueDate(item.dueDate ?? null),
-  status: mapStatus(item),
-  priority: mapPriority(item)
+  status: resolveTaskStatus(item.statusLabel, item.status),
+  priority: resolveTaskPriority(item.priorityLabel, item.priority)
 });
 
 const TasksPage = () => {
   const [activeFilter, setActiveFilter] = useState<FilterId>("visi");
+  const queryClient = useQueryClient();
   const {
     data: taskList,
     isLoading,
@@ -134,6 +97,22 @@ const TasksPage = () => {
     queryFn: () => apiClient.get<TaskApiItem[]>("/tasks"),
     staleTime: 30_000,
     select: (items) => items.map(mapTaskResponse)
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: (typeof DEFAULT_STATUS_OPTION)["status"] }) =>
+      apiClient.patch(`/tasks/${id}/status`, { status }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    }
+  });
+
+  const priorityMutation = useMutation({
+    mutationFn: async ({ id, priority }: { id: string; priority: number }) =>
+      apiClient.put(`/tasks/${id}`, { priority }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    }
   });
 
   const tasks = useMemo(() => {
@@ -180,18 +159,19 @@ const TasksPage = () => {
                 <th className="px-4 py-3 text-left font-medium">Terminas</th>
                 <th className="px-4 py-3 text-left font-medium">Prioritetas</th>
                 <th className="px-4 py-3 text-left font-medium">Būsena</th>
+                <th className="px-4 py-3 text-left font-medium">Veiksmai</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 bg-slate-900/40 text-slate-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
+                  <td colSpan={6} className="px-4 py-6 text-center text-slate-400">
                     Kraunama...
                   </td>
                 </tr>
               ) : isError ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-rose-300">
+                  <td colSpan={6} className="px-4 py-6 text-center text-rose-300">
                     {error instanceof Error ? error.message : "Nepavyko įkelti užduočių."}
                   </td>
                 </tr>
@@ -215,13 +195,55 @@ const TasksPage = () => {
                       </StatusBadge>
                     </td>
                     <td className="px-4 py-4">
-                      <StatusBadge tone={statusTone[task.status] ?? "neutral"}>{task.status.toUpperCase()}</StatusBadge>
+                      <StatusBadge tone={getStatusTone(task.status)}>{task.status.toUpperCase()}</StatusBadge>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex flex-col gap-2 text-xs text-slate-300 sm:flex-row sm:items-center">
+                        <label className="sr-only" htmlFor={`task-status-${task.id}`}>
+                          Keisti {task.title} būseną
+                        </label>
+                        <select
+                          id={`task-status-${task.id}`}
+                          aria-label={`Keisti ${task.title} būseną`}
+                          className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                          value={(getStatusOptionByLabel(task.status) ?? DEFAULT_STATUS_OPTION).status}
+                          onChange={(event) =>
+                            statusMutation.mutate({ id: task.id, status: event.target.value as (typeof DEFAULT_STATUS_OPTION)["status"] })
+                          }
+                          disabled={statusMutation.isPending}
+                        >
+                          {TASK_STATUS_OPTIONS.map((option) => (
+                            <option key={option.status} value={option.status}>
+                              {option.displayLabel}
+                            </option>
+                          ))}
+                        </select>
+                        <label className="sr-only" htmlFor={`task-priority-${task.id}`}>
+                          Keisti {task.title} prioritetą
+                        </label>
+                        <select
+                          id={`task-priority-${task.id}`}
+                          aria-label={`Keisti ${task.title} prioritetą`}
+                          className="rounded-md border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-100 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                          value={(getPriorityOptionByLabel(task.priority) ?? DEFAULT_PRIORITY_OPTION).value}
+                          onChange={(event) =>
+                            priorityMutation.mutate({ id: task.id, priority: Number(event.target.value) })
+                          }
+                          disabled={priorityMutation.isPending}
+                        >
+                          {TASK_PRIORITY_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.displayLabel}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-slate-400">
+                  <td colSpan={6} className="px-4 py-6 text-center text-slate-400">
                     Pagal pasirinktą filtrą užduočių nerasta.
                   </td>
                 </tr>
