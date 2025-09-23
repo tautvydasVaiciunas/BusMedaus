@@ -5,60 +5,8 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { UpdateTaskStatusDto } from './dto/update-task-status.dto';
-import { Task } from './task.entity';
 import { TasksService } from './tasks.service';
-
-interface TaskUserSummary {
-  id: string;
-  email: string;
-  roles: string[];
-}
-
-interface TaskHiveSummary {
-  id: string;
-  name: string;
-}
-
-interface TaskResponse {
-  id: string;
-  title: string;
-  description?: string;
-  status: string;
-  priority: number;
-  dueDate?: Date | null;
-  inspectionId?: string;
-  templateId?: string;
-  hive: TaskHiveSummary;
-  assignedTo?: TaskUserSummary | null;
-  createdBy: TaskUserSummary;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-function mapUser(user?: { id: string; email: string; roles: string[] } | null): TaskUserSummary | null {
-  if (!user) {
-    return null;
-  }
-  return { id: user.id, email: user.email, roles: user.roles };
-}
-
-function mapTask(task: Task): TaskResponse {
-  return {
-    id: task.id,
-    title: task.title,
-    description: task.description,
-    status: task.status,
-    priority: task.priority,
-    dueDate: task.dueDate ?? null,
-    inspectionId: task.inspectionId ?? undefined,
-    templateId: task.templateId ?? undefined,
-    hive: { id: task.hive.id, name: task.hive.name },
-    assignedTo: mapUser(task.assignedTo),
-    createdBy: mapUser(task.createdBy)!,
-    createdAt: task.createdAt,
-    updatedAt: task.updatedAt
-  };
-}
+import { TaskPresenter, toTaskPresenter, toTaskPresenterList } from './task.presenter';
 
 @Controller()
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -69,21 +17,21 @@ export class TasksController {
   async listTasks(
     @CurrentUser() user: AuthenticatedUser,
     @Param('hiveId') hiveId: string
-  ): Promise<TaskResponse[]> {
+  ): Promise<TaskPresenter[]> {
     const tasks = await this.tasksService.listTasksForHive(user, hiveId);
-    return tasks.map(mapTask);
+    return toTaskPresenterList(tasks);
   }
 
   @Get('tasks/:id')
-  async getTask(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string): Promise<TaskResponse> {
+  async getTask(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string): Promise<TaskPresenter> {
     const task = await this.tasksService.getTask(user, id);
-    return mapTask(task);
+    return toTaskPresenter(task);
   }
 
   @Post('tasks')
-  async createTask(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateTaskDto): Promise<TaskResponse> {
+  async createTask(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateTaskDto): Promise<TaskPresenter> {
     const task = await this.tasksService.createTask(user, dto);
-    return mapTask(task);
+    return toTaskPresenter(task);
   }
 
   @Put('tasks/:id')
@@ -91,9 +39,9 @@ export class TasksController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
     @Body() dto: UpdateTaskDto
-  ): Promise<TaskResponse> {
+  ): Promise<TaskPresenter> {
     const task = await this.tasksService.updateTask(user, id, dto);
-    return mapTask(task);
+    return toTaskPresenter(task);
   }
 
   @Patch('tasks/:id/status')
@@ -101,14 +49,20 @@ export class TasksController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('id') id: string,
     @Body() dto: UpdateTaskStatusDto
-  ): Promise<TaskResponse> {
+  ): Promise<TaskPresenter> {
     const task = await this.tasksService.updateTaskStatus(user, id, dto);
-    return mapTask(task);
+    return toTaskPresenter(task);
   }
 
   @Delete('tasks/:id')
   async deleteTask(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string): Promise<{ success: boolean }> {
     await this.tasksService.removeTask(user, id);
     return { success: true };
+  }
+
+  @Get('tasks')
+  async listAccessible(@CurrentUser() user: AuthenticatedUser): Promise<TaskPresenter[]> {
+    const tasks = await this.tasksService.listAccessibleTasks(user);
+    return toTaskPresenterList(tasks);
   }
 }
