@@ -63,7 +63,7 @@ export const TopBar = ({ isMobileNavOpen, onToggleMobileNav, mobileNavId }: TopB
             type="button"
             onClick={() => void logout()}
             disabled={isProcessing}
-            className="hidden rounded-full border border-slate-800 bg-slate-900/70 p-2 text-slate-300 transition hover:border-rose-500/60 hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-50 sm:inline-flex"
+            className="inline-flex rounded-full border border-slate-800 bg-slate-900/70 p-2 text-slate-300 transition hover:border-rose-500/60 hover:text-rose-200 disabled:cursor-not-allowed disabled:opacity-50"
             aria-label="Atsijungti"
           >
             <ArrowRightOnRectangleIcon className="h-5 w-5" />
