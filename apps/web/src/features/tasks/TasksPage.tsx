@@ -148,7 +148,7 @@ const TasksPage = () => {
 
       <Card
         title="Užduočių sąrašas"
-        subtitle="Kai API bus aktyvus, čia matysite realaus laiko progresą ir komentarus"
+        subtitle="Duomenys kraunami iš API ir atnaujinami po kiekvieno pakeitimo"
       >
         <div className="overflow-hidden rounded-xl border border-slate-800">
           <table className="min-w-full divide-y divide-slate-800 text-sm">

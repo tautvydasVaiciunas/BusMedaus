@@ -356,7 +356,7 @@ const NotificationsPage = () => {
 
       <Card
         title="Naujausi įrašai"
-        subtitle="Kai bus prijungtas backend'as, čia atsinaujins visų modulių įvykiai"
+        subtitle="Duomenys kraunami iš API ir nuolat papildomi naujausiais įvykiais"
         accent={<BellAlertIcon className="h-6 w-6 text-amber-300" />}
       >
         <ul className="space-y-4">
