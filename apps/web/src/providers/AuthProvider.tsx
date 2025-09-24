@@ -69,18 +69,34 @@ const initialState: AuthState = {
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+const warnStorageError = (message: string, error: unknown) => {
+  if (import.meta.env?.DEV) {
+    console.warn(message, error);
+  }
+};
+
 const persistSession = (payload: PersistedAuth) => {
   if (typeof window === "undefined") {
     return;
   }
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch (error) {
+    warnStorageError("Failed to persist auth session; continuing with in-memory state.", error);
+  }
 };
 
 const removePersistedSession = () => {
   if (typeof window === "undefined") {
     return;
   }
-  window.localStorage.removeItem(STORAGE_KEY);
+
+  try {
+    window.localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    warnStorageError("Failed to remove persisted auth session; clearing in-memory state only.", error);
+  }
 };
 
 const loadPersistedSession = (): PersistedAuth | null => {
@@ -88,15 +104,16 @@ const loadPersistedSession = (): PersistedAuth | null => {
     return null;
   }
 
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-
-  if (!raw) {
-    return null;
-  }
-
   try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+
+    if (!raw) {
+      return null;
+    }
+
     return JSON.parse(raw) as PersistedAuth;
-  } catch {
+  } catch (error) {
+    warnStorageError("Failed to load persisted auth session; falling back to in-memory state.", error);
     return null;
   }
 };
