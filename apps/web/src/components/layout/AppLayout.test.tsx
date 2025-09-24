@@ -34,7 +34,10 @@ const renderWithProviders = (ui: ReactElement) => {
     </MemoryRouter>
   );
 
-  return render(ui, { wrapper: Wrapper });
+  return {
+    authValue,
+    ...render(ui, { wrapper: Wrapper })
+  };
 };
 
 describe("AppLayout", () => {
@@ -63,5 +66,23 @@ describe("AppLayout", () => {
 
     expect(screen.queryByRole("dialog", { name: /navigacija/i })).not.toBeInTheDocument();
     expect(toggle).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("provides a visible and clickable logout control on mobile", async () => {
+    const { authValue } = renderWithProviders(
+      <AppLayout>
+        <p>Turinys</p>
+      </AppLayout>
+    );
+
+    const logoutButton = screen.getByRole("button", { name: /atsijungti/i });
+    expect(logoutButton).toBeInTheDocument();
+    expect(logoutButton).not.toHaveClass("hidden");
+    expect(logoutButton).toBeEnabled();
+
+    const user = userEvent.setup();
+    await user.click(logoutButton);
+
+    expect(authValue.logout).toHaveBeenCalledTimes(1);
   });
 });
