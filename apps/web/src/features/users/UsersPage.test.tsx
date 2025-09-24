@@ -39,7 +39,7 @@ describe("UsersPage", () => {
         firstName: "Ada",
         lastName: "Lovelace",
         phoneNumber: "+37060000001",
-        roles: ["admin"],
+        roles: ["member"],
         isActive: true,
         createdAt: new Date("2024-01-05T08:45:00.000Z").toISOString(),
         updatedAt: new Date("2024-01-10T08:45:00.000Z").toISOString()
@@ -52,7 +52,7 @@ describe("UsersPage", () => {
 
     await waitFor(() => expect(screen.getByText("Ada Lovelace")).toBeInTheDocument());
 
-    expect(screen.getByText("Administratorius")).toBeInTheDocument();
+    expect(screen.getByText("Komandos narys")).toBeInTheDocument();
     expect(screen.getByText("ada@example.com • +37060000001")).toBeInTheDocument();
     expect(screen.getByText(/Komandoje nuo/)).toBeInTheDocument();
     expect(spy).toHaveBeenCalledWith("/users");

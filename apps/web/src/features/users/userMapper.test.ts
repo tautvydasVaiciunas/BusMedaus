@@ -50,6 +50,35 @@ describe("mapSafeUserToTeamMember", () => {
     expect(member.activeSince).toBe("nežinoma");
   });
 
+  it("localizes recognized roles", () => {
+    const manager = mapSafeUserToTeamMember({
+      ...baseUser,
+      id: "user-3",
+      roles: ["manager"]
+    });
+
+    const member = mapSafeUserToTeamMember({
+      ...baseUser,
+      id: "user-4",
+      roles: ["member"]
+    });
+
+    expect(manager.role).toBe("Vadovas");
+    expect(member.role).toBe("Komandos narys");
+  });
+
+  it("falls back to title case for unknown roles", () => {
+    const payload: SafeUser = {
+      ...baseUser,
+      id: "user-5",
+      roles: ["lead_engineer"]
+    };
+
+    const member = mapSafeUserToTeamMember(payload);
+
+    expect(member.role).toBe("Lead Engineer");
+  });
+
   it("produces deterministic avatar colors based on the user identifier", () => {
     const first = mapSafeUserToTeamMember(baseUser);
     const second = mapSafeUserToTeamMember({ ...baseUser });

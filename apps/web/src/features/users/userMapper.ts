@@ -6,7 +6,9 @@ const ROLE_LABELS: Record<string, string> = {
   analyst: "Analitikas",
   inspector: "Inspektorius",
   viewer: "Stebėtojas",
-  auditor: "Auditorius"
+  auditor: "Auditorius",
+  manager: "Vadovas",
+  member: "Komandos narys"
 };
 
 const AVATAR_COLORS = [
