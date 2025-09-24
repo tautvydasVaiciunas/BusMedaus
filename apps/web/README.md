@@ -2,8 +2,8 @@
 
 This package contains the Vite + React (TypeScript) front-end that mirrors the legacy screenshots in `../../static/photos`.
 It uses Tailwind CSS for styling primitives, ESLint + Prettier for formatting, and Vitest with React Testing Library for UI
-contracts. Until the production API is live the screens fetch data from deterministic mock services so that the component
-structure matches the expected backend payloads.
+contracts. The app mounts React Query hooks backed by the shared `apiClient`, so every console view calls the live NestJS API
+routes (such as `/tasks`, `/hives`, and `/users`) instead of deterministic mocks.
 
 ## Available scripts
 
@@ -18,3 +18,16 @@ npm run preview       # serve the production build locally
 
 The production build writes hashed assets to `../../dist/web`. When the NestJS backend is ready to serve static files it can
 point to that directory and expose `index.html` as the entry point.
+
+## Configuring the API target
+
+Vite reads the backend base URL from the `VITE_API_BASE_URL` environment variable. Set it to the running NestJS instance (for
+example, `http://localhost:3000`) before starting the dev server or building the bundle:
+
+```bash
+VITE_API_BASE_URL=http://localhost:3000 npm run dev
+```
+
+You can also create an `.env.local` file alongside this README with the same variable so `npm run dev` and `npm run build` use
+the correct API automatically. When configured, the console renders the real task, hive, and notification data managed by the
+backend.

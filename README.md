@@ -58,8 +58,9 @@ volume between runs.
 ## Web console
 
 A modern React + Vite front-end lives under `apps/web`. It mirrors the existing UI screenshots in `static/photos` and is
-powered by Tailwind CSS, ESLint/Prettier, and Vitest with React Testing Library. Until the backend API is available, the
-screens rely on deterministic mock services so developers can iterate on layout and interactions.
+powered by Tailwind CSS, ESLint/Prettier, and Vitest with React Testing Library. The console now uses React Query and the
+shared `apiClient` to call the live NestJS API routes (for example, `/tasks`, `/hives`, `/users`, and `/notifications`) so
+you see real data while iterating on the UI.
 
 Useful commands:
 
@@ -74,6 +75,13 @@ npm run test:web
 
 `npm run build` now compiles the React console before producing the backend bundle, writing optimised assets to
 `dist/web`. The NestJS server can later serve these files once the integration layer is prepared.
+
+### Front-end environment configuration
+
+The Vite dev server expects an API URL at build time. Set the `VITE_API_BASE_URL` environment variable (for example,
+`http://localhost:3000`) before running `npm run dev:web` so the console proxies requests to your backend. You can place the
+value in `apps/web/.env.local`, export it in your shell session, or inject it through your process manager. When the setting
+is in place, the UI surfaces the same task, hive, and messaging data served by the NestJS instance.
 
 ## Key features
 
