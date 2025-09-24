@@ -9,6 +9,8 @@ import { apiClient } from "../../lib/apiClient";
 
 type TestQueryClient = QueryClient & { invalidateQueries: QueryClient["invalidateQueries"] };
 
+const originalNotification = globalThis.Notification;
+
 const createTestQueryClient = () =>
   new QueryClient({
     defaultOptions: {
@@ -32,6 +34,15 @@ describe("NotificationsPage", () => {
     vi.restoreAllMocks();
     testQueryClient?.clear();
     testQueryClient = null;
+    if (typeof window !== "undefined") {
+      window.localStorage.clear();
+    }
+    if (originalNotification) {
+      globalThis.Notification = originalNotification;
+    } else {
+      delete (globalThis as typeof globalThis & { Notification?: typeof Notification }).Notification;
+    }
+    delete (globalThis as typeof globalThis & { busmedausPush?: unknown }).busmedausPush;
   });
 
   it("marks notifications as read and invalidates the list", async () => {
@@ -121,5 +132,61 @@ describe("NotificationsPage", () => {
 
     await waitFor(() => expect(screen.getByText("Serveris nepasiekiamas")).toBeInTheDocument());
     await waitFor(() => expect(markButton).toBeEnabled());
+  });
+
+  it("užregistruoja naršyklės prenumeratą paspaudus įjungimo mygtuką", async () => {
+    const user = userEvent.setup();
+
+    class NotificationStub {
+      static permission: NotificationPermission = "default";
+      static requestPermission = vi.fn(async () => {
+        NotificationStub.permission = "granted";
+        return "granted" as NotificationPermission;
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      constructor() {}
+    }
+
+    (globalThis as typeof globalThis & { Notification: typeof Notification }).Notification =
+      NotificationStub as unknown as typeof Notification;
+
+    vi.spyOn(apiClient, "get").mockResolvedValue([]);
+    const postSpy = vi
+      .spyOn(apiClient, "post")
+      .mockResolvedValue({ id: "sub-1", token: "token-abc" });
+
+    const getTokenSpy = vi.fn().mockResolvedValue("token-abc");
+    (globalThis as typeof globalThis & {
+      busmedausPush?: { getToken?: () => Promise<string | null> };
+    }).busmedausPush = {
+      getToken: getTokenSpy
+    };
+
+    renderWithClient(<NotificationsPage />);
+
+    const enableButton = await screen.findByRole("button", {
+      name: /Įjungti naršyklės pranešimus/i
+    });
+
+    await user.click(enableButton);
+
+    await waitFor(() => expect(getTokenSpy).toHaveBeenCalled());
+
+    await waitFor(() =>
+      expect(postSpy).toHaveBeenCalledWith(
+        "/notifications/subscriptions",
+        expect.objectContaining({
+          token: "token-abc",
+          metadata: expect.objectContaining({ platform: "web", permission: "granted" })
+        })
+      )
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: /Išjungti naršyklės pranešimus/i })
+      ).toBeInTheDocument()
+    );
   });
 });
