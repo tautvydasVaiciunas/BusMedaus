@@ -47,7 +47,9 @@ describe('firebase messaging provider', () => {
   it('sanitizes newline escapes before Firebase initialization', async () => {
     process.env.FIREBASE_PROJECT_ID = 'project-id';
     process.env.FIREBASE_CLIENT_EMAIL = 'client@example.com';
-    process.env.FIREBASE_PRIVATE_KEY = 'line-one\\nline-two';
+    const escapedPrivateKey = String.raw`line-one\nline-two`;
+    expect(escapedPrivateKey).toContain('\\n');
+    process.env.FIREBASE_PRIVATE_KEY = escapedPrivateKey;
 
     const { NotificationsModule } = await import('./notifications.module');
     const providers = Reflect.getMetadata(
@@ -70,6 +72,7 @@ describe('firebase messaging provider', () => {
     const expectedSanitizedKey = `line-one
 line-two`;
     expect(credentials.privateKey).toBe(expectedSanitizedKey);
+    expect(credentials.privateKey).not.toBe(process.env.FIREBASE_PRIVATE_KEY);
     expect(credentials.privateKey).toContain('\n');
     expect(credentials.privateKey).not.toContain('\\n');
     expect(credentials.privateKey.split('\n')).toEqual(['line-one', 'line-two']);

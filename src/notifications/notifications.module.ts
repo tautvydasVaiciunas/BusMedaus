@@ -45,7 +45,7 @@ const firebaseMessagingProvider = {
     }
 
     try {
-      // Convert literal "\\n" sequences from env files into real newlines before creating the Firebase credential.
+      // Convert literal "\\n" (single-escaped newline) sequences from env files into real newlines before creating the Firebase credential.
       const privateKeyWithNewlines = privateKey.replace(/\\n/g, '\n');
       const existing = getApps().find((app) => app.name === 'busmedaus-notifications');
       const app =
