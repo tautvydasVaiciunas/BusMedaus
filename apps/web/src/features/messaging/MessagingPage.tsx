@@ -126,7 +126,7 @@ const MessagingPage = () => {
     <div className="grid gap-6 lg:grid-cols-3">
       <Card
         title="Komunikacijos centras"
-        subtitle="Kai backend'as bus paruoštas, čia bus rodomi realūs pokalbiai ir failų mainai"
+        subtitle="Duomenys kraunami iš API ir pateikiami realių pokalbių santraukoje"
         className="lg:col-span-1"
       >
         <div className="space-y-3">
