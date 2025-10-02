@@ -25,22 +25,52 @@ docker compose -f apps/api/docker-compose.yml --profile dev down
 Prepare a PostgreSQL database reachable from your workstation (for example, a local instance on `localhost:5432` with a `postgres` user and `busmedaus` database). Then run the following commands in order:
 
 ```bash
+# install dependencies for both the API and web console
 npm install
+
+# configure the API to talk to your PostgreSQL instance
 export DB_HOST=localhost
 export DB_PORT=5432
 export DB_USERNAME=postgres
 export DB_PASSWORD=postgres
 export DB_NAME=busmedaus
 export WEB_ORIGIN=http://localhost:5173
-npm run build
-npm run db:migrate
-npm run db:seed # optional
-node dist/main.js
+
+# rebuild the schema and seed the demo accounts
+npm run db:reset
+
+# start the API and React console together
+npm run dev
 ```
 
-> **PowerShell tip:** replace the `export` lines above with `$env:DB_HOST = "localhost"`, `$env:DB_PORT = "5432"`, and so on.
+On Windows, replace the `export` statements with the equivalents for your shell:
 
-The initial `npm install` command triggers a `postinstall` hook that also installs the React console dependencies under `apps/web`, ensuring `npm run build` bundles both the backend and front-end assets. Once the environment variables match your database, running the API starts the server on `http://localhost:3000`.
+- **PowerShell**
+
+  ```powershell
+  $env:DB_HOST = "localhost"
+  $env:DB_PORT = "5432"
+  $env:DB_USERNAME = "postgres"
+  $env:DB_PASSWORD = "postgres"
+  $env:DB_NAME = "busmedaus"
+  $env:WEB_ORIGIN = "http://localhost:5173"
+  ```
+
+- **Command Prompt**
+
+  ```bat
+  set DB_HOST=localhost
+  set DB_PORT=5432
+  set DB_USERNAME=postgres
+  set DB_PASSWORD=postgres
+  set DB_NAME=busmedaus
+  set WEB_ORIGIN=http://localhost:5173
+  ```
+
+The initial `npm install` command triggers a `postinstall` hook that installs the React console dependencies under `apps/web`.
+`npm run db:reset` drops any existing schema, runs migrations, and seeds the demo accounts automatically so the default admin
+and user credentials immediately work. Finally, `npm run dev` launches the NestJS API (via `npm run start:dev`, which runs
+migrations and seeds before booting) alongside the Vite web console, matching a fresh clone workflow.
 
 ### CORS configuration
 
