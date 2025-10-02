@@ -10,6 +10,7 @@
     "dev:web": "npm --prefix apps/web run dev",
     "lint": "eslint .",
     "lint:web": "npm --prefix apps/web run lint",
+    "db:reset": "ts-node src/database/reset.ts && npm run db:migrate && npm run db:seed",
     "db:migrate": "ts-node src/database/run-migrations.ts",
     "db:seed": "ts-node src/database/seed.ts",
     "test": "jest --runInBand",

@@ -58,6 +58,9 @@ against the database configured by `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASS
 Populate development fixtures by running `npm run db:seed` after the migrations complete. The seed script uses the same connection
 settings to insert baseline users, hives, and tasks that help during local testing.
 
+Use `npm run db:reset` to drop the existing schema and rebuild it from scratch. The script clears all tables with TypeORM's
+`clearDatabase` helper before chaining the migration and seed routines so you can recover a clean environment quickly.
+
 ### Docker Compose workflow
 
 The Compose profile described in [Option A](#option-a-docker-compose) provisions PostgreSQL 16 and the API service in one stack. It installs dependencies, builds the project, runs migrations and seeds, and then launches the NestJS server connected to the `postgres` service. PostgreSQL data persists in the `postgres-data` named volume between runs.
