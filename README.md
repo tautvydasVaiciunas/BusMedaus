@@ -4,6 +4,26 @@ This repository contains a NestJS backend that powers the BusMedaus platform. It
 
 ## Getting started
 
+Follow one of the workflows below to launch the API and supporting services.
+
+### Option A: Docker Compose
+
+Use the Compose definition in `apps/api/docker-compose.yml` to provision PostgreSQL and the API service together:
+
+```bash
+docker compose -f apps/api/docker-compose.yml --profile dev up --build
+```
+
+The stack installs dependencies, builds the project, runs migrations and seeds, and then starts the NestJS server connected to the bundled PostgreSQL 16 container. Stop the services when you are done:
+
+```bash
+docker compose -f apps/api/docker-compose.yml --profile dev down
+```
+
+### Option B: Local PostgreSQL + Node.js
+
+Prepare a PostgreSQL database reachable from your workstation (for example, a local instance on `localhost:5432` with a `postgres` user and `busmedaus` database). Then run the following commands in order:
+
 ```bash
 npm install
 export DB_HOST=localhost
@@ -18,13 +38,9 @@ npm run db:seed # optional
 node dist/main.js
 ```
 
-The root `npm install` command runs a `postinstall` hook that installs the React console dependencies under `apps/web`, ensuring
-`npm run build` has everything it needs to produce both the backend and front-end bundles.
+> **PowerShell tip:** replace the `export` lines above with `$env:DB_HOST = "localhost"`, `$env:DB_PORT = "5432"`, and so on.
 
-The backend requires access to PostgreSQL. Connection details are read from the `DB_*` environment variables in `src/app.module.ts`.
-By default the service expects a database named `busmedaus` available on `localhost:5432` with the `postgres` user. Adjust the
-variables above to match your environment before running the migrations or starting the API. Once running, the server listens on
-`http://localhost:3000`.
+The initial `npm install` command triggers a `postinstall` hook that also installs the React console dependencies under `apps/web`, ensuring `npm run build` bundles both the backend and front-end assets. Once the environment variables match your database, running the API starts the server on `http://localhost:3000`.
 
 ### CORS configuration
 
@@ -44,16 +60,7 @@ settings to insert baseline users, hives, and tasks that help during local testi
 
 ### Docker Compose workflow
 
-For a fully containerised setup, use the Compose file under `apps/api/docker-compose.yml`:
-
-```bash
-docker compose -f apps/api/docker-compose.yml --profile dev up --build
-```
-
-This spins up a PostgreSQL 16 instance alongside the API service. The API container installs dependencies, builds the project,
-runs database migrations, and launches the NestJS server connected to the `postgres` service. Stop the stack with
-`docker compose -f apps/api/docker-compose.yml --profile dev down`. The PostgreSQL data persists in the `postgres-data` named
-volume between runs.
+The Compose profile described in [Option A](#option-a-docker-compose) provisions PostgreSQL 16 and the API service in one stack. It installs dependencies, builds the project, runs migrations and seeds, and then launches the NestJS server connected to the `postgres` service. PostgreSQL data persists in the `postgres-data` named volume between runs.
 
 ## Web console
 
@@ -108,3 +115,10 @@ Email and push notifications are now sent through SendGrid and Firebase Cloud Me
 Client devices register push tokens by calling `POST /notifications/subscriptions`, and tokens can be revoked with `DELETE /notifications/subscriptions/:id`. Each domain module now passes channel hints so that the `NotificationsService` fans out in-app, email, and push payloads while recording delivery status metadata on the notification records.
 
 Front-end integracijos pavyzdžiai bei naršyklės konfigūracijos žingsniai aprašyti faile [`docs/browser-push.md`](docs/browser-push.md).
+
+## Demo credentials
+
+| Role  | Email                  | Password   |
+| ----- | ---------------------- | ---------- |
+| Admin | `admin@busmedaus.test` | `Admin123!`|
+| User  | `user@busmedaus.test`  | `User123!` |
