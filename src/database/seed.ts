@@ -67,6 +67,28 @@ async function seed() {
     member.passwordHash = await ensurePasswordHash('User123!', member.passwordHash);
     member = await userRepo.save(member);
 
+    let operator = await userRepo.findOne({ where: { email: 'liam@busmedaus.test' } });
+    if (!operator) {
+      operator = userRepo.create({
+        email: 'liam@busmedaus.test',
+        firstName: 'Liam',
+        lastName: 'Wong',
+        phoneNumber: '+61-400-000-003',
+        roles: ['operator'],
+        isActive: true,
+        passwordHash: ''
+      });
+    }
+
+    operator.firstName = 'Liam';
+    operator.lastName = 'Wong';
+    operator.phoneNumber = '+61-400-000-003';
+    const existingOperatorRoles = operator.roles?.length ? operator.roles : ['operator'];
+    operator.roles = Array.from(new Set([...existingOperatorRoles, 'operator']));
+    operator.isActive = true;
+    operator.passwordHash = await ensurePasswordHash('Operator123!', operator.passwordHash);
+    operator = await userRepo.save(operator);
+
     const hiveRepo = AppDataSource.getRepository(Hive);
     let hive = await hiveRepo.findOne({ where: { name: 'Sunrise' }, relations: ['members', 'owner'] });
     if (!hive) {
@@ -80,7 +102,7 @@ async function seed() {
         temperament: 'Calm',
         healthScore: 85,
         owner: admin,
-        members: [admin, member]
+        members: [admin, member, operator]
       });
       hive = await hiveRepo.save(hive);
     } else {
@@ -92,6 +114,9 @@ async function seed() {
       }
       if (!memberIds.has(member.id)) {
         hive.members.push(member);
+      }
+      if (!memberIds.has(operator.id)) {
+        hive.members.push(operator);
       }
       hive = await hiveRepo.save(hive);
     }
