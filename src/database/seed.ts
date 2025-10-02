@@ -30,6 +30,20 @@ async function seed() {
       admin = await userRepo.save(admin);
     }
 
+    let operator = await userRepo.findOne({ where: { email: 'liam@busmedaus.test' } });
+    if (!operator) {
+      operator = userRepo.create({
+        email: 'liam@busmedaus.test',
+        firstName: 'Liam',
+        lastName: 'Patel',
+        phoneNumber: '+61-400-000-002',
+        passwordHash: await bcrypt.hash('ChangeMe123!', 12),
+        roles: ['member'],
+        isActive: true
+      });
+      operator = await userRepo.save(operator);
+    }
+
     const hiveRepo = AppDataSource.getRepository(Hive);
     let hive = await hiveRepo.findOne({ where: { name: 'Sunrise' }, relations: ['members', 'owner'] });
     if (!hive) {
@@ -43,8 +57,11 @@ async function seed() {
         temperament: 'Calm',
         healthScore: 85,
         owner: admin,
-        members: [admin]
+        members: [admin, operator]
       });
+      hive = await hiveRepo.save(hive);
+    } else if (!hive.members.some((member) => member.id === operator.id)) {
+      hive.members = [...hive.members, operator];
       hive = await hiveRepo.save(hive);
     }
 

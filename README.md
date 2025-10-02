@@ -1,8 +1,32 @@
 # BusMedaus Backend
 
-This repository contains a NestJS backend that powers the BusMedaus platform. It provides modules for authentication, user management, hive collaboration, task workflows, messaging, notifications, media management, and audit logging.
+This repository houses the NestJS backend and the React web console for the BusMedaus platform. The API exposes modules for authentication, hive and task operations, messaging, notifications, media management, and auditing while the Vite-powered front-end consumes those endpoints.
 
-## Getting started
+## Setup options
+
+Choose one of the following workflows depending on your environment.
+
+### Option 1: Docker Compose
+
+The Compose configuration under `apps/api/docker-compose.yml` spins up PostgreSQL and the API in coordinated containers.
+
+```bash
+docker compose -f apps/api/docker-compose.yml --profile dev up --build
+```
+
+The command installs dependencies, builds the monorepo, and starts the NestJS server on <http://localhost:3000>. Run the database tasks in a second terminal once the containers are healthy:
+
+```bash
+docker compose -f apps/api/docker-compose.yml exec api npm run db:migrate
+docker compose -f apps/api/docker-compose.yml exec api npm run db:seed # optional
+docker compose -f apps/api/docker-compose.yml logs -f api # tail the API output
+```
+
+Stop the stack with `docker compose -f apps/api/docker-compose.yml --profile dev down`. PostgreSQL data persists in the `postgres-data` volume between runs.
+
+### Option 2: Local environment
+
+Install dependencies and prepare the project directly on your machine. Run the following commands in order (the sequence matches the original quick-start snippet):
 
 ```bash
 npm install
@@ -18,84 +42,44 @@ npm run db:seed # optional
 node dist/main.js
 ```
 
-The root `npm install` command runs a `postinstall` hook that installs the React console dependencies under `apps/web`, ensuring
-`npm run build` has everything it needs to produce both the backend and front-end bundles.
+- `npm install` triggers a `postinstall` hook that fetches the React console dependencies under `apps/web`.
+- Database connection details are read from the exported `DB_*` variables in `src/app.module.ts`. Adjust them before running migrations or seeds.
+- `npm run build` compiles both the API and front-end bundles.
+- `npm run db:migrate` executes the TypeORM migrations under `src/migrations` against the configured database.
+- `npm run db:seed` populates development fixtures such as the default users, hives, and tasks.
+- `node dist/main.js` launches the compiled NestJS server on <http://localhost:3000>.
 
-The backend requires access to PostgreSQL. Connection details are read from the `DB_*` environment variables in `src/app.module.ts`.
-By default the service expects a database named `busmedaus` available on `localhost:5432` with the `postgres` user. Adjust the
-variables above to match your environment before running the migrations or starting the API. Once running, the server listens on
-`http://localhost:3000`.
+## Running the applications
 
-### CORS configuration
+### Backend API
 
-The backend enables Cross-Origin Resource Sharing (CORS) for browser-based clients. Set the `WEB_ORIGIN` environment variable to
-a comma-separated list of allowed origins (for example,
-`https://app.example.com,https://admin.example.com`). If the variable is not set, the API allows requests from
-`http://localhost:5173` to match the Vite development server used by the web console. Remember to restart the API after changing
-this value so NestJS picks up the updated configuration.
+After migrations complete, start the API with one of:
 
-### Database migrations and seed data
+- `node dist/main.js` for the compiled build (as shown above).
+- `docker compose -f apps/api/docker-compose.yml --profile dev up --build` when using containers.
 
-Run pending migrations with `npm run db:migrate`. This command executes the TypeORM migrations registered under `src/migrations`
-against the database configured by `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, and `DB_NAME`.
+The service exposes CORS for the origin provided by `WEB_ORIGIN`. Supply a comma-separated list (for example, `http://localhost:5173,https://admin.example.com`) to allow multiple clients.
 
-Populate development fixtures by running `npm run db:seed` after the migrations complete. The seed script uses the same connection
-settings to insert baseline users, hives, and tasks that help during local testing.
+### Front-end console
 
-### Docker Compose workflow
-
-For a fully containerised setup, use the Compose file under `apps/api/docker-compose.yml`:
+The React console lives in `apps/web` and uses Vite in development.
 
 ```bash
-docker compose -f apps/api/docker-compose.yml --profile dev up --build
+npm run dev:web
 ```
 
-This spins up a PostgreSQL 16 instance alongside the API service. The API container installs dependencies, builds the project,
-runs database migrations, and launches the NestJS server connected to the `postgres` service. Stop the stack with
-`docker compose -f apps/api/docker-compose.yml --profile dev down`. The PostgreSQL data persists in the `postgres-data` named
-volume between runs.
-
-## Web console
-
-A modern React + Vite front-end lives under `apps/web`. It mirrors the existing UI screenshots in `static/photos` and is
-powered by Tailwind CSS, ESLint/Prettier, and Vitest with React Testing Library. The console now uses React Query and the
-shared `apiClient` to call the live NestJS API routes (for example, `/tasks`, `/hives`, `/users`, and `/notifications`) so
-you see real data while iterating on the UI.
-
-Useful commands:
+Export `VITE_API_BASE_URL=http://localhost:3000` (or create `apps/web/.env.local`) so the UI proxies requests to your local API instance. Additional front-end commands:
 
 ```bash
-# Launch the front-end in development mode
-npm run dev:web
-
-# Run the web lint rules or tests
 npm run lint:web
 npm run test:web
 ```
 
-`npm run build` now compiles the React console before producing the backend bundle, writing optimised assets to
-`dist/web`. The NestJS server can later serve these files once the integration layer is prepared.
-
-### Front-end environment configuration
-
-The Vite dev server expects an API URL at build time. Set the `VITE_API_BASE_URL` environment variable (for example,
-`http://localhost:3000`) before running `npm run dev:web` so the console proxies requests to your backend. You can place the
-value in `apps/web/.env.local`, export it in your shell session, or inject it through your process manager. When the setting
-is in place, the UI surfaces the same task, hive, and messaging data served by the NestJS instance.
-
-## Key features
-
-- **Authentication** with bcrypt hashed passwords, short-lived JWT access tokens, and rotating refresh tokens.
-- **Role-based access control** enforced through guards that honour `admin`, `manager`, and `member` roles.
-- **Modular domain APIs** for users, hives, tasks, notifications, messaging, and media with layered controllers, services, and repositories.
-- **Transactional workflows** ensuring hive, task, messaging, and media operations commit atomically.
-- **Auditing middleware** that records every state-changing request and exposes the logs through secure admin endpoints.
-
-All endpoints apply request validation and respond with sanitized payloads that omit sensitive fields.
+`npm run build` already compiles the front-end and outputs optimised assets to `dist/web` for the backend to serve later.
 
 ## Notifications configuration
 
-Email and push notifications are now sent through SendGrid and Firebase Cloud Messaging when credentials are present. Configure the transports through environment variables:
+Optional notification transports rely on the following environment variables:
 
 | Variable | Purpose |
 | --- | --- |
@@ -103,8 +87,19 @@ Email and push notifications are now sent through SendGrid and Firebase Cloud Me
 | `SENDGRID_FROM_EMAIL` | Verified sender used for outbound messages. |
 | `FIREBASE_PROJECT_ID` | Firebase project identifier for FCM. |
 | `FIREBASE_CLIENT_EMAIL` | Service account client email for FCM. |
-| `FIREBASE_PRIVATE_KEY` | Service account private key (literal `\n` escapes with a single backslash are converted to newlines). |
+| `FIREBASE_PRIVATE_KEY` | Service account private key (escape newlines as `\n`). |
 
-Client devices register push tokens by calling `POST /notifications/subscriptions`, and tokens can be revoked with `DELETE /notifications/subscriptions/:id`. Each domain module now passes channel hints so that the `NotificationsService` fans out in-app, email, and push payloads while recording delivery status metadata on the notification records.
+Client devices register push tokens with `POST /notifications/subscriptions` and can revoke them via `DELETE /notifications/subscriptions/:id`. The service records delivery metadata for in-app, email, and push channels.
 
-Front-end integracijos pavyzdžiai bei naršyklės konfigūracijos žingsniai aprašyti faile [`docs/browser-push.md`](docs/browser-push.md).
+## Demo credentials
+
+Use the seeded accounts after running `npm run db:seed`:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Administrator | admin@busmedaus.test | ChangeMe123! |
+| Field Operator | liam@busmedaus.test | ChangeMe123! |
+
+Reset the passwords immediately in production environments.
+
+Further examples of browser push configuration live in [`docs/browser-push.md`](docs/browser-push.md).
