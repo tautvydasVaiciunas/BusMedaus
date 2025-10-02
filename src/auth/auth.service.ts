@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException, forwardRef } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
@@ -52,6 +52,7 @@ export class AuthService {
   private readonly refreshTokenTtlMs = Number(process.env.JWT_REFRESH_TTL_MS || 1000 * 60 * 60 * 24 * 7);
 
   constructor(
+    @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
     private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly dataSource: DataSource
