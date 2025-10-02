@@ -7,10 +7,9 @@ import { NotificationSubscription } from '../notifications/notification-subscrip
 import { MediaItem } from '../media/media-item.entity';
 import { Comment } from '../messaging/comment.entity';
 import { RefreshToken } from '../auth/refresh-token.entity';
-import { CreateCoreTables1699999999999 } from '../migrations/1699999999999-create-core-tables';
-import { AlignTypeormSchema1700000000000 } from '../migrations/1700000000000-align-typeorm-schema';
 import { NotificationTransports1700000000100 } from '../migrations/1700000000100-notification-transports';
 import { AddHiveTelemetry1700000000201 } from '../migrations/1700000000201-add-hive-telemetry';
+import { InitialSchema1700000000300 } from '../migrations/1700000000300-initial-schema';
 
 const getBoolean = (value: string | undefined, fallback = false): boolean => {
   if (value === undefined) {
@@ -29,8 +28,7 @@ export const AppDataSource = new DataSource({
   ssl: getBoolean(process.env.DB_SSL) ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' } : false,
   entities: [User, Hive, Task, Notification, NotificationSubscription, MediaItem, Comment, RefreshToken],
   migrations: [
-    CreateCoreTables1699999999999,
-    AlignTypeormSchema1700000000000,
+    InitialSchema1700000000300,
     NotificationTransports1700000000100,
     AddHiveTelemetry1700000000201
   ],
