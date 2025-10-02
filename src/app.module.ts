@@ -11,8 +11,6 @@ import { TasksModule } from './tasks/tasks.module';
 import { HivesModule } from './hives/hives.module';
 import { UsersModule } from './users/users.module';
 import { InitialSchema1700000000300 } from './migrations/1700000000300-initial-schema';
-import { NotificationTransports1700000000100 } from './migrations/1700000000100-notification-transports';
-import { AddHiveTelemetry1700000000201 } from './migrations/1700000000201-add-hive-telemetry';
 
 @Module({
   imports: [
@@ -26,11 +24,7 @@ import { AddHiveTelemetry1700000000201 } from './migrations/1700000000201-add-hi
       autoLoadEntities: true,
       synchronize: false,
       migrationsRun: true,
-      migrations: [
-        InitialSchema1700000000300,
-        NotificationTransports1700000000100,
-        AddHiveTelemetry1700000000201
-      ],
+      migrations: [InitialSchema1700000000300],
       migrationsTableName: 'typeorm_migrations',
       ssl:
         process.env.DB_SSL === 'true'

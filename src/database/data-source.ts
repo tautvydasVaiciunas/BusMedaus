@@ -7,8 +7,6 @@ import { NotificationSubscription } from '../notifications/notification-subscrip
 import { MediaItem } from '../media/media-item.entity';
 import { Comment } from '../messaging/comment.entity';
 import { RefreshToken } from '../auth/refresh-token.entity';
-import { NotificationTransports1700000000100 } from '../migrations/1700000000100-notification-transports';
-import { AddHiveTelemetry1700000000201 } from '../migrations/1700000000201-add-hive-telemetry';
 import { InitialSchema1700000000300 } from '../migrations/1700000000300-initial-schema';
 
 const getBoolean = (value: string | undefined, fallback = false): boolean => {
@@ -27,11 +25,7 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME || 'busmedaus',
   ssl: getBoolean(process.env.DB_SSL) ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' } : false,
   entities: [User, Hive, Task, Notification, NotificationSubscription, MediaItem, Comment, RefreshToken],
-  migrations: [
-    InitialSchema1700000000300,
-    NotificationTransports1700000000100,
-    AddHiveTelemetry1700000000201
-  ],
+  migrations: [InitialSchema1700000000300],
   migrationsTableName: 'typeorm_migrations',
   synchronize: false
 });
