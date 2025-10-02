@@ -16,6 +16,14 @@ async function seed() {
   await AppDataSource.initialize();
   try {
     const userRepo = AppDataSource.getRepository(User);
+    const ensurePasswordHash = async (password: string, currentHash?: string) => {
+      if (!currentHash) {
+        return bcrypt.hash(password, 12);
+      }
+      const matches = await bcrypt.compare(password, currentHash);
+      return matches ? currentHash : bcrypt.hash(password, 12);
+    };
+
     let admin = await userRepo.findOne({ where: { email: 'admin@busmedaus.test' } });
     if (!admin) {
       admin = userRepo.create({
@@ -23,12 +31,41 @@ async function seed() {
         firstName: 'Ava',
         lastName: 'Nguyen',
         phoneNumber: '+61-400-000-001',
-        passwordHash: await bcrypt.hash('ChangeMe123!', 12),
         roles: ['admin'],
-        isActive: true
+        isActive: true,
+        passwordHash: ''
       });
-      admin = await userRepo.save(admin);
     }
+
+    admin.firstName = 'Ava';
+    admin.lastName = 'Nguyen';
+    admin.phoneNumber = '+61-400-000-001';
+    admin.roles = Array.from(new Set([...(admin.roles ?? []), 'admin']));
+    admin.isActive = true;
+    admin.passwordHash = await ensurePasswordHash('Admin123!', admin.passwordHash);
+    admin = await userRepo.save(admin);
+
+    let member = await userRepo.findOne({ where: { email: 'user@busmedaus.test' } });
+    if (!member) {
+      member = userRepo.create({
+        email: 'user@busmedaus.test',
+        firstName: 'Blake',
+        lastName: 'Jordan',
+        phoneNumber: '+61-400-000-002',
+        roles: ['member'],
+        isActive: true,
+        passwordHash: ''
+      });
+    }
+
+    member.firstName = 'Blake';
+    member.lastName = 'Jordan';
+    member.phoneNumber = '+61-400-000-002';
+    const existingMemberRoles = member.roles?.length ? member.roles : ['member'];
+    member.roles = Array.from(new Set([...existingMemberRoles, 'member']));
+    member.isActive = true;
+    member.passwordHash = await ensurePasswordHash('User123!', member.passwordHash);
+    member = await userRepo.save(member);
 
     const hiveRepo = AppDataSource.getRepository(Hive);
     let hive = await hiveRepo.findOne({ where: { name: 'Sunrise' }, relations: ['members', 'owner'] });
@@ -43,8 +80,19 @@ async function seed() {
         temperament: 'Calm',
         healthScore: 85,
         owner: admin,
-        members: [admin]
+        members: [admin, member]
       });
+      hive = await hiveRepo.save(hive);
+    } else {
+      hive.owner = admin;
+      hive.members = hive.members ?? [];
+      const memberIds = new Set(hive.members.map((user) => user.id));
+      if (!memberIds.has(admin.id)) {
+        hive.members.push(admin);
+      }
+      if (!memberIds.has(member.id)) {
+        hive.members.push(member);
+      }
       hive = await hiveRepo.save(hive);
     }
 
