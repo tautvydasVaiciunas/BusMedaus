@@ -1,10 +1,19 @@
-import { TaskStatus } from "../../../../../src/tasks/task-status.enum";
 import type { Task } from "../../types";
+
+export const TaskStatus = {
+  PENDING: "PENDING",
+  IN_PROGRESS: "IN_PROGRESS",
+  COMPLETED: "COMPLETED",
+  BLOCKED: "BLOCKED",
+  CANCELLED: "CANCELLED"
+} as const;
+
+export type TaskStatusCode = (typeof TaskStatus)[keyof typeof TaskStatus];
 
 type StatusTone = "success" | "warning" | "danger" | "info" | "neutral";
 
 export type TaskStatusOption = {
-  status: TaskStatus;
+  status: TaskStatusCode;
   label: Task["status"];
   displayLabel: string;
   tone: StatusTone;
