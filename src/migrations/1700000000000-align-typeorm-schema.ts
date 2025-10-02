@@ -7,6 +7,8 @@ export class AlignTypeormSchema1700000000000 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "firstName" character varying(100) NOT NULL DEFAULT ''`);
     await queryRunner.query(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "lastName" character varying(100) NOT NULL DEFAULT ''`);
     await queryRunner.query(`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "phoneNumber" character varying(32)`);
+    await queryRunner.query(`ALTER TABLE "users" ALTER COLUMN "phoneNumber" TYPE character varying(32)`);
+    await queryRunner.query(`ALTER TABLE "users" ALTER COLUMN "phoneNumber" DROP NOT NULL`);
 
     await queryRunner.query(`ALTER TABLE "hives" ADD COLUMN IF NOT EXISTS "apiaryName" character varying(150) NOT NULL DEFAULT ''`);
     await queryRunner.query(`ALTER TABLE "hives" ADD COLUMN IF NOT EXISTS "location" character varying(300)`);
