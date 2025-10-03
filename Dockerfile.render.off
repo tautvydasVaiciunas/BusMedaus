@@ -9,7 +9,8 @@ COPY .eslintrc.json ./
 COPY jest.config.ts ./
 COPY apps/web/package*.json ./apps/web/
 
-RUN npm install
+RUN npm ci --ignore-scripts
+RUN npm --prefix apps/web ci --legacy-peer-deps
 
 COPY . .
 
@@ -21,7 +22,7 @@ ENV NODE_ENV=production
 
 COPY package*.json ./
 
-RUN npm install --omit=dev
+RUN npm ci --omit=dev --ignore-scripts
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/apps/web/dist ./dist/web
