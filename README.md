@@ -2,6 +2,17 @@
 
 This repository contains a NestJS backend that powers the BusMedaus platform. It provides modules for authentication, user management, hive collaboration, task workflows, messaging, notifications, media management, and audit logging.
 
+## Greitas startas lokaliai
+
+```bash
+npm ci --ignore-scripts
+npm --prefix apps/web ci --legacy-peer-deps
+npm run build
+npm run dev
+```
+
+Pirmoji komanda įdiegia Node priklausomybes, antroji sutvarko front-end modulį, o `npm run build` užtikrina, kad galutiniai paketai būtų paruošti prieš paleidžiant bendrą `npm run dev` darbo eigą.
+
 ## Getting started
 
 Follow one of the workflows below to launch the API and supporting services.
@@ -25,19 +36,28 @@ docker compose -f apps/api/docker-compose.yml --profile dev down
 Prepare a PostgreSQL database reachable from your workstation (for example, a local instance on `localhost:5432` with a `postgres` user and `busmedaus` database). Then run the following commands in order:
 
 ```bash
-# install dependencies for both the API and web console
-npm install
+# install backend dependencies
+npm ci --ignore-scripts
 
-# configure the API to talk to your PostgreSQL instance
+# install the front-end workspace
+npm --prefix apps/web ci --legacy-peer-deps
+
+# configure the API to talk to your PostgreSQL instance (example values below)
 export DB_HOST=localhost
 export DB_PORT=5432
 export DB_USERNAME=postgres
 export DB_PASSWORD=postgres
 export DB_NAME=busmedaus
+export JWT_SECRET=dev-secret
+export REFRESH_SECRET=dev-refresh-secret
 export WEB_ORIGIN=http://localhost:5173
 
-# rebuild the schema and seed the demo accounts
-npm run db:reset
+# nukreipti Vite užklausas į vietinį API
+export VITE_API_BASE_URL=http://localhost:3000
+
+# paruošti schemą ir duomenų sėklas
+npm run db:migrate
+npm run db:seed
 
 # start the API and React console together
 npm run dev
@@ -53,7 +73,10 @@ On Windows, replace the `export` statements with the equivalents for your shell:
   $env:DB_USERNAME = "postgres"
   $env:DB_PASSWORD = "postgres"
   $env:DB_NAME = "busmedaus"
+  $env:JWT_SECRET = "dev-secret"
+  $env:REFRESH_SECRET = "dev-refresh-secret"
   $env:WEB_ORIGIN = "http://localhost:5173"
+  $env:VITE_API_BASE_URL = "http://localhost:3000"
   ```
 
 - **Command Prompt**
@@ -64,13 +87,38 @@ On Windows, replace the `export` statements with the equivalents for your shell:
   set DB_USERNAME=postgres
   set DB_PASSWORD=postgres
   set DB_NAME=busmedaus
+  set JWT_SECRET=dev-secret
+  set REFRESH_SECRET=dev-refresh-secret
   set WEB_ORIGIN=http://localhost:5173
+  set VITE_API_BASE_URL=http://localhost:3000
   ```
 
-The initial `npm install` command triggers a `postinstall` hook that installs the React console dependencies under `apps/web`.
-`npm run db:reset` drops any existing schema, runs migrations, and seeds the demo accounts automatically so the default admin
-and user credentials immediately work. Finally, `npm run dev` launches the NestJS API (via `npm run start:dev`, which runs
-migrations and seeds before booting) alongside the Vite web console, matching a fresh clone workflow.
+`npm run db:migrate` pritaiko schemos pakeitimus, `npm run db:seed` įkelia demonstracinius įrašus, o `npm run dev` paleidžia NestJS API (kartu su migracijomis ir sėklomis) bei Vite web konsolę vienu procesu.
+
+### Aplinkos kintamieji
+
+**Backend**
+
+- `DB_HOST`
+- `DB_PORT`
+- `DB_USERNAME`
+- `DB_PASSWORD`
+- `DB_NAME`
+- `JWT_SECRET`
+- `REFRESH_SECRET`
+- `WEB_ORIGIN`
+
+**Frontend**
+
+- `VITE_API_BASE_URL`
+
+### API sveikatos patikra
+
+Patikrinkite, ar serveris veikia, išsiųsdami užklausą:
+
+```
+GET http://localhost:3000/health -> { status: 'ok' }
+```
 
 ### CORS configuration
 
@@ -88,8 +136,7 @@ against the database configured by `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASS
 Populate development fixtures by running `npm run db:seed` after the migrations complete. The seed script uses the same connection
 settings to insert baseline users, hives, and tasks that help during local testing.
 
-Use `npm run db:reset` to drop the existing schema and rebuild it from scratch. The script clears all tables with TypeORM's
-`clearDatabase` helper before chaining the migration and seed routines so you can recover a clean environment quickly.
+Use `npm run db:migrate` and `npm run db:seed` together whenever you need to refresh the schema and repopulate the seed data.
 
 ### Docker Compose workflow
 
