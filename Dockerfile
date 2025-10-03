@@ -24,7 +24,7 @@ COPY package*.json ./
 RUN npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/dist/web ./dist/web
+COPY --from=builder /app/apps/web/dist ./dist/web
 COPY --from=builder /app/static ./static
 
 EXPOSE 3000
