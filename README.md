@@ -161,7 +161,7 @@ npm run test:web
 ```
 
 `npm run build` now compiles the React console before producing the backend bundle, writing optimised assets to
-`dist/web`. The NestJS server can later serve these files once the integration layer is prepared.
+`apps/web/dist`. The NestJS server can later serve these files once the integration layer is prepared.
 
 ### Front-end environment configuration
 

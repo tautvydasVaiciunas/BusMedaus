@@ -16,8 +16,8 @@ npm run test          # execute Vitest + React Testing Library
 npm run preview       # serve the production build locally
 ```
 
-The production build writes hashed assets to `../../dist/web`. When the NestJS backend is ready to serve static files it can
-point to that directory and expose `index.html` as the entry point.
+The production build writes hashed assets to the local `dist` directory. When the NestJS backend is ready to serve static
+files it can point to that directory and expose `index.html` as the entry point.
 
 ## Configuring the API target
 
