@@ -11,6 +11,7 @@ import { TasksModule } from './tasks/tasks.module';
 import { HivesModule } from './hives/hives.module';
 import { UsersModule } from './users/users.module';
 import { InitialSchema1700000000300 } from './migrations/1700000000300-initial-schema';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -39,7 +40,8 @@ import { InitialSchema1700000000300 } from './migrations/1700000000300-initial-s
     NotificationsModule,
     MessagingModule,
     MediaModule,
-    DashboardModule
+    DashboardModule,
+    HealthModule
   ]
 })
 export class AppModule implements NestModule {
