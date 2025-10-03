@@ -10,27 +10,14 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { TasksModule } from './tasks/tasks.module';
 import { HivesModule } from './hives/hives.module';
 import { UsersModule } from './users/users.module';
-import { InitialSchema1700000000300 } from './migrations/1700000000300-initial-schema';
 import { HealthModule } from './health/health.module';
+import { AppDataSource } from './database/data-source';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT ?? '5432', 10),
-      username: process.env.DB_USERNAME || process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || 'postgres',
-      database: process.env.DB_NAME || 'busmedaus',
-      autoLoadEntities: true,
-      synchronize: false,
-      migrationsRun: true,
-      migrations: [InitialSchema1700000000300],
-      migrationsTableName: 'typeorm_migrations',
-      ssl:
-        process.env.DB_SSL === 'true'
-          ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' }
-          : false
+      ...AppDataSource.options,
+      autoLoadEntities: true
     }),
     AuditModule,
     AuthModule,
