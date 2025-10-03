@@ -128,6 +128,54 @@ a comma-separated list of allowed origins (for example,
 `http://localhost:5173` to match the Vite development server used by the web console. Remember to restart the API after changing
 this value so NestJS picks up the updated configuration.
 
+## Deployment to Neon, Render, and Vercel
+
+### Provision a Neon database
+
+1. Create a new project in the [Neon](https://console.neon.tech) dashboard and add a branch for production.
+2. Open the **Connection Details** panel and copy the pooled PostgreSQL connection string (for example,
+   `postgres://<user>:<password>@<host>/<database>?sslmode=require`).
+3. Store this value as `DATABASE_URL` in your deployment environments (Render and Vercel) so both the API and build steps can
+   reach the managed PostgreSQL instance.
+4. Rotate the password or regenerate the connection string in Neon if the credentials are ever exposed, and update the
+   corresponding `DATABASE_URL` values immediately.
+
+### Deploy the API to Render
+
+1. Create a **Web Service** in Render that points to this repository and select the branch you want to deploy.
+2. Set the **Build Command** to:
+
+   ```bash
+   npm ci --ignore-scripts && npm --prefix apps/web ci --legacy-peer-deps && npm run build
+   ```
+
+3. Set the **Start Command** to:
+
+   ```bash
+   node dist/main.js
+   ```
+
+4. Configure the following environment variables under the **Environment** section:
+
+   - `DATABASE_URL` → the Neon connection string from above.
+   - `JWT_SECRET` → production JWT signing secret.
+   - `REFRESH_SECRET` → production refresh token secret.
+   - `WEB_ORIGIN` → comma-separated list of allowed browser origins.
+
+5. Trigger a deploy. Once Render finishes building, check `https://<render-service>.onrender.com/health` to verify the API is
+   reachable and returning `{ status: 'ok' }`.
+
+### Deploy the front-end to Vercel
+
+1. Import the repository into Vercel and set the **Root Directory** to `apps/web`.
+2. Use `npm run build` as the **Build Command** and `dist` as the **Output Directory**.
+3. Add the `VITE_API_BASE_URL` environment variable pointing to the public Render API URL (for example,
+   `https://<render-service>.onrender.com`).
+4. After Vercel assigns the production URL, add it to the Render `WEB_ORIGIN` environment variable so the API accepts browser
+   requests from the deployed front-end.
+5. Redeploy the Render service to apply the updated CORS configuration, then test the Vercel site in the browser. The front-end
+   should report a healthy connection when the `/health` endpoint responds with `{ status: 'ok' }`.
+
 ### Database migrations and seed data
 
 Run pending migrations with `npm run db:migrate`. This command executes the TypeORM migrations registered under `src/migrations`
