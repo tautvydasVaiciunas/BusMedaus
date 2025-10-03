@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from '../auth/auth.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { TasksModule } from '../tasks/tasks.module';
 import { UsersModule } from '../users/users.module';
@@ -9,7 +10,7 @@ import { MessagingController } from './messaging.controller';
 import { MessagingService } from './messaging.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Comment]), TasksModule, UsersModule, NotificationsModule],
+  imports: [TypeOrmModule.forFeature([Comment]), TasksModule, UsersModule, NotificationsModule, AuthModule],
   controllers: [MessagingController],
   providers: [MessagingService, CommentsRepository],
   exports: [MessagingService, CommentsRepository]

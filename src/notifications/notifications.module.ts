@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import sgMail, { MailService } from '@sendgrid/mail';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getMessaging, Messaging } from 'firebase-admin/messaging';
+import { AuthModule } from '../auth/auth.module';
 import { UsersModule } from '../users/users.module';
 import { Notification } from './notification.entity';
 import { NotificationsController } from './notifications.controller';
@@ -70,7 +71,7 @@ const firebaseMessagingProvider = {
 };
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Notification, NotificationSubscription]), UsersModule],
+  imports: [TypeOrmModule.forFeature([Notification, NotificationSubscription]), UsersModule, AuthModule],
   controllers: [NotificationsController],
   providers: [
     NotificationsService,
