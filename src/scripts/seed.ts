@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { AppDataSource } from './data-source';
+import { AppDataSource } from '../database/data-source';
 import { User } from '../users/user.entity';
 import { Hive, HiveStatus } from '../hives/hive.entity';
 import { Task } from '../tasks/task.entity';
