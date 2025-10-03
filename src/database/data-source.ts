@@ -1,3 +1,4 @@
+import path from 'path';
 import { DataSource } from 'typeorm';
 import { User } from '../users/user.entity';
 import { Hive } from '../hives/hive.entity';
@@ -7,7 +8,6 @@ import { NotificationSubscription } from '../notifications/notification-subscrip
 import { MediaItem } from '../media/media-item.entity';
 import { Comment } from '../messaging/comment.entity';
 import { RefreshToken } from '../auth/refresh-token.entity';
-import { InitialSchema1700000000300 } from '../migrations/1700000000300-initial-schema';
 
 const getBoolean = (value: string | undefined, fallback = false): boolean => {
   if (value === undefined) {
@@ -25,7 +25,8 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME || 'busmedaus',
   ssl: getBoolean(process.env.DB_SSL) ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' } : false,
   entities: [User, Hive, Task, Notification, NotificationSubscription, MediaItem, Comment, RefreshToken],
-  migrations: [InitialSchema1700000000300],
+  migrations: [path.join(__dirname, '../migrations/*.js')],
   migrationsTableName: 'typeorm_migrations',
+  migrationsRun: true,
   synchronize: false
 });
